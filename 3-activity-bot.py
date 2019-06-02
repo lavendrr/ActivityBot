@@ -24,6 +24,11 @@ d2_inactive = d2_csv[d2_csv.Status.isna()]
 
 @client.event
 async def on_message(message):
+    x = message.content.split()
+    if len(x) == 2:
+        u = x[1]
+        member = discord.utils.get(message.guild.members, name=u)
+        
     # we do not want the bot to reply to itself
     if message.author == client.user:
         return
@@ -33,7 +38,27 @@ async def on_message(message):
     if message.content.startswith('!inactive'):
         msg = ', '.join(d2_inactive.member.tolist())
         await message.channel.send(msg)
-                
+    if message.content.startswith('!jointime'):
+        if len(x) != 2:
+            await message.channel.send('Wrong # of arguments.')
+        else:
+            await message.channel.send(member.name + ' joined on ' + member.joined_at.strftime('%m/%d/%Y') + '.')
+    if message.content.startswith('!activities'):
+        if len(x) != 2:
+            await message.channel.send('Wrong # of arguments.')
+        else:
+            y = member.activities[0].name
+            await message.channel.send(member.name + ' is currently playing '+ y + '.')
+    if message.content.startswith('!emotes'):
+        await message.channel.send(message.author.guild.emojis)
+    if message.content.startswith('!lastmsg'):
+        count = 0
+        async for message in message.channel.history(limit=200):
+            count +=1
+        await message.channel.send(count)
+#        async for message in member.history(limit=1):
+#            z = message.created_at
+#        await message.channel.send(z)
 @client.event
 async def on_ready():
     print('Logged in as')
