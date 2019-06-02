@@ -8,7 +8,8 @@ This is a temporary script file.
 import pandas as pd
 import discord
 
-BOT_TOKEN = "NTg0ODE4NjA4ODU3OTM5OTc5.XPQgbA.6aWNaAIlplXA_r1RC58NDN_LIOs"
+# BOT_TOKEN = "NTg0ODE4NjA4ODU3OTM5OTc5.XPQgbA.6aWNaAIlplXA_r1RC58NDN_LIOs"
+BOT_TOKEN = "NTg0ODM3NTg4NjQ1MzE0NTYz.XPQugQ.4-TLXdoVN0Ca84xaLo4kGoG7Bhk"
 
 # Start the BOT!
 
@@ -16,7 +17,8 @@ BOT_TOKEN = "NTg0ODE4NjA4ODU3OTM5OTc5.XPQgbA.6aWNaAIlplXA_r1RC58NDN_LIOs"
 client = discord.Client()
 
 # Read the INACTIVE data
-csv_path = "/Users/rmoctezuma/AppDev/ActivityBot/"
+# csv_path = "/Users/rmoctezuma/AppDev/ActivityBot/"
+csv_path = "C:\\Users\\Lavender\\Documents\\GitHub\\ActivityBot\\"
 d2_csv = pd.read_csv(csv_path + "processed.csv")
 d2_inactive = d2_csv[d2_csv.Status.isna()]
 
