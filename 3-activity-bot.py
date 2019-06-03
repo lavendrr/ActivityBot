@@ -49,7 +49,7 @@ async def on_message(message):
             await message.channel.send("Please enter a member's name.")
         else:
             await message.channel.send(member.name + ' joined on ' + member.joined_at.strftime('%m/%d/%Y') + '.')
-    if message.content.startswith('!activities'):
+    if message.content.startswith('!game'):
         if arg == '':
             await message.channel.send("Please enter a member's name.")
         else:
@@ -57,7 +57,7 @@ async def on_message(message):
             await message.channel.send(member.name + ' is currently playing '+ y + '.')
     if message.content.startswith('!emotes'):
         await message.channel.send(message.author.guild.emojis)
-    if message.content.startswith('!lastmsg'):
+    if message.content.startswith('!memberactivity'):
         listOfChannels = message.guild.text_channels
         mostRecentMsg = None
         for val in listOfChannels:
@@ -74,19 +74,32 @@ async def on_message(message):
         listOfChannels = message.guild.text_channels
         for val in listOfChannels:
             await message.channel.send(str(val) + ' ' + str(val.position))
+    if message.content.startswith('!roleactivity'):
+        # processes the message but looks for role instead of member
+        # this should be made into a function that can be called per command to save space
+        arg_pos = message.content.find(' ')
+        if arg_pos > 0:
+            arg = message.content[arg_pos + 1:]
+            role = discord.utils.get(message.guild.roles, name=arg)
+        else:
+            arg = ''
+            member = None
+        listOfChannels = message.guild.text_channels
+        for value in role.members:
+            mostRecentMsg = None
+            member = value
+            for val in listOfChannels:
+                async for m in val.history():
+                    if m.author == member:
+                        msgAware = pytz.utc.localize(m.created_at).astimezone(pytz.timezone('US/Central'))
+                        if mostRecentMsg == None:
+                            mostRecentMsg = msgAware
+                        elif msgAware > mostRecentMsg:
+                            mostRecentMsg = msgAware
+                        break
+            await message.channel.send(member.name + ' - ' + str(mostRecentMsg))
+        await message.channel.send('Done!')
 
-#        WORKING CODE BACKUP
-#        if message.content.startswith('!lastmsg'):
-#        async for message in message.channel.history():
-#            if message.author == member:
-#                await message.channel.send(message.created_at)
-#                break
-                
-#        old code, doesn't work    
-#        async for message in member.history(limit=1):
-#            z = message.created_at
-#        await message.channel.send(z)
-                
 @client.event
 async def on_ready():
     print('Logged in as')
