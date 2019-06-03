@@ -52,10 +52,10 @@ async def on_message(message):
     if message.content.startswith('!emotes'):
         await message.channel.send(message.author.guild.emojis)
     if message.content.startswith('!lastmsg'):
-        count = 0
-        async for message in message.channel.history(limit=200):
-            count +=1
-        await message.channel.send(count)
+        async for message in message.channel.history():
+            if message.author == member:
+                await message.channel.send(message.created_at)
+                break
 #        async for message in member.history(limit=1):
 #            z = message.created_at
 #        await message.channel.send(z)
