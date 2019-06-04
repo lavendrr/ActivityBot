@@ -14,23 +14,21 @@ import pytz
 #BOT_TOKEN = "NTg0ODE4NjA4ODU3OTM5OTc5.XPQgbA.6aWNaAIlplXA_r1RC58NDN_LIOs"
 BOT_TOKEN = "NTg0ODM3NTg4NjQ1MzE0NTYz.XPQugQ.4-TLXdoVN0Ca84xaLo4kGoG7Bhk"
 
-async def get_member(msg):
+def get_member(msg):
     arg_pos = msg.content.find(' ')
     if arg_pos > 0:
         arg = msg.content[arg_pos + 1:]
         member = discord.utils.get(msg.guild.members, name=arg)
     else:
-        await msg.channel.send("Please enter a member's name.")
         member = None
     return member
 
-async def get_role(msg):
+def get_role(msg):
     arg_pos = msg.content.find(' ')
     if arg_pos > 0:
         arg = msg.content[arg_pos + 1:]
         role = discord.utils.get(msg.guild.roles, name=arg)
     else:
-        await msg.channel.send("Please enter a valid role.")
         role = None
     return role
     
@@ -39,8 +37,8 @@ async def get_role(msg):
 client = discord.Client()
 
 # Read the INACTIVE data
-csv_path = "/Users/rmoctezuma/AppDev/ActivityBot/"
-# csv_path = "C:\\Users\\Lavender\\Documents\\GitHub\\ActivityBot\\"
+# csv_path = "/Users/rmoctezuma/AppDev/ActivityBot/"
+csv_path = "C:\\Users\\Lavender\\Documents\\GitHub\\ActivityBot\\"
 d2_csv = pd.read_csv(csv_path + "processed.csv")
 d2_inactive = d2_csv[d2_csv.Status.isna()]
 
@@ -59,11 +57,15 @@ async def on_message(message):
         member = get_member(message)
         if member != None:
             await message.channel.send(member.name + ' joined on ' + member.joined_at.strftime('%m/%d/%Y') + '.')
+        else:
+            await message.channel.send("Please enter a member's name.")
     if message.content.startswith('!game'):
         member = get_member(message)
         if member != None:
             game_name = member.activities[0].name
             await message.channel.send(member.name + ' is currently playing '+ game_name + '.')
+        else:
+            await message.channel.send("Please enter a member's name.")
     if message.content.startswith('!emotes'):
         await message.channel.send(message.author.guild.emojis)
     if message.content.startswith('!memberactivity'):
@@ -81,6 +83,8 @@ async def on_message(message):
                             mostRecentMsg = msgAware
                         break
             await message.channel.send(mostRecentMsg)
+        else:
+            await message.channel.send("Please enter a member's name.")
     if message.content.startswith('!listchannels'):
         listOfChannels = message.guild.text_channels
         for val in listOfChannels:
@@ -88,6 +92,7 @@ async def on_message(message):
     if message.content.startswith('!roleactivity'):
         role = get_role(message)
         if role != None:
+            member_list = []
             listOfChannels = message.guild.text_channels
             for member in role.members:
                 mostRecentMsg = None
@@ -100,8 +105,19 @@ async def on_message(message):
                             elif msgAware > mostRecentMsg:
                                 mostRecentMsg = msgAware
                             break
+                if mostRecentMsg != None:
+                    if (pytz.utc.localize(datetime.now()).astimezone(pytz.timezone('US/Central')) - timedelta(days=14)) < mostRecentMsg:
+                        isActive = True
+                    else:
+                        isActive = False
+                member_data = { "member" :  member.name, "active" : isActive }
+                member_list.append(member_data)
                 await message.channel.send(member.name + ' - ' + str(mostRecentMsg))
+            member_df = pd.DataFrame(member_list, columns = ['member','active'])
+            member_df.to_csv('activity-list.csv')
             await message.channel.send('Done!')
+        else:
+            await message.channel.send("Please enter a valid role.")
 
 @client.event
 async def on_ready():
