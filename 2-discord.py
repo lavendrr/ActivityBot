@@ -25,6 +25,9 @@ BOT_PERMISSIONS = "76800"
 # 3. To add the bot to the Discord server, go to:
 BOT_URL = "https://discordapp.com/oauth2/authorize?client_id=" + CLIENT_ID + "&scope=bot" #&permissions=" + BOT_PERMISSIONS
 
+# For the 
+BOT_URL = "https://discordapp.com/oauth2/authorize?client_id=584818608857939979&scope=bot&permissions=388160 " + BOT_PERMISSIONS
+
 # 4. Call the API endpoint
 
 API_ENDPOINT = 'https://discordapp.com/api/v6'
