@@ -128,7 +128,11 @@ async def on_message(message):
         if role != None:
             member_list = []
             listOfChannels = message.guild.text_channels
+            i = 0
             for member in role.members:
+                i = i + 1
+                if (i> 10):
+                    break
                 mostRecentMsg = None
                 for val in listOfChannels:
                     try:
