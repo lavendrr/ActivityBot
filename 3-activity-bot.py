@@ -11,9 +11,7 @@ from datetime import datetime, timedelta
 from pytz import timezone
 import pytz
 import requests
-
-
-
+import numpy as np
 
 #BOT_TOKEN = "NTg0ODE4NjA4ODU3OTM5OTc5.XP8kHw.Beigr96LwAu69_hxbBdhW5RzIIE"
 BOT_TOKEN = "NTg0ODM3NTg4NjQ1MzE0NTYz.XPQugQ.4-TLXdoVN0Ca84xaLo4kGoG7Bhk"
@@ -71,9 +69,15 @@ def get_bungie_data(clan_id): #3007121
     # Convert to US Central
     clan['lastOnline'] = clan.lastOnline.dt.tz_convert('US/Central')
     right_now = pytz.utc.localize(datetime.utcnow()).astimezone(pytz.timezone('US/Central'))
-    clan['active'] = (right_now - clan.lastOnline).dt.days
-    clan = clan[['destinyDisplayName','memberType','lastOnline','active']]
+    clan['game_active'] = (right_now - clan.lastOnline).dt.days
+    clan = clan[['destinyDisplayName','memberType','lastOnline','game_active']]
     return clan
+
+def get_destiny_name(member_df, bungie_name):
+    m = member_df[member_df.member.str.contains(bungie_name)==True]
+    if len(m) > 0:
+        return m.member.iloc[0]
+    return 'Not found'
 
 @client.event
 async def on_message(message):
@@ -124,41 +128,31 @@ async def on_message(message):
             await message.channel.send(str(val) + ' ' + str(val.position))
     if message.content.startswith('!roleactivity'):
         # Get the activity
+        activity_cutoff = datetime.now() - timedelta(days=14)
         role = get_role(message)
         if role != None:
             member_list = []
             listOfChannels = message.guild.text_channels
-            i = 0
             for member in role.members:
-                i = i + 1
-                if (i> 10):
-                    break
-                mostRecentMsg = None
-                for val in listOfChannels:
-                    try:
-                        async for m in val.history():
-                            if m.author == member:
-                                msgAware = pytz.utc.localize(m.created_at).astimezone(pytz.timezone('US/Central'))
-                                if mostRecentMsg == None:
-                                    mostRecentMsg = msgAware
-                                elif msgAware > mostRecentMsg:
-                                    mostRecentMsg = msgAware
-                                break
-                    except (Exception) as e:
-                        pass
-                        print("Skipping channel {}, user {} has no access to it.".format(str(val), member.name))
-                isActive = False
-                if mostRecentMsg != None:
-                    if (pytz.utc.localize(datetime.now()).astimezone(pytz.timezone('US/Central')) - timedelta(days=14)) < mostRecentMsg:
-                        isActive = True
-                member_data = { "member" :  member.name, "mostRecentMsg" : mostRecentMsg, "active" : isActive }
+                member_data = { "member" :  member.display_name, "discord_active" : False }
                 member_list.append(member_data)
-                await message.channel.send(member.name + ' - ' + str(mostRecentMsg))
-            member_df = pd.DataFrame(member_list, columns = ['member','mostRecentMsg','active'])
+            member_df = pd.DataFrame(member_list, columns = ['member', 'discord_active'])
+            for channel in listOfChannels:
+                try:
+                    history = await channel.history(limit = 10000, after = activity_cutoff, oldest_first = False).flatten()
+                    print("Processing channel {} with {} messages in the past 14 days.".format(str(channel), len(history)))
+                    for m in history:
+                        member_df.loc[member_df.member == m.author.display_name,'discord_active'] = True
+                except:
+                    pass
             # Now get Bungie info
             bungie_info = get_bungie_data("3007121")
             # Merge them
-            all_data = bungie_info.merge(member_df, how = 'outer', left_on='destinyDisplayName', right_on='member')
+            bungie_info.destinyDisplayName = bungie_info.destinyDisplayName.str.lower()
+            member_df.member = member_df.member.str.lower()
+            bungie_info['discordName'] = bungie_info.apply(lambda x: 
+                get_destiny_name(member_df,x.destinyDisplayName),axis=1)
+            all_data = bungie_info.merge(member_df, how = 'outer', left_on='discordName', right_on='member')
             # Save the CSV
             all_data.to_csv('activity-list.csv')
             await message.channel.send('Done!')
