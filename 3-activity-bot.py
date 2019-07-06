@@ -12,6 +12,8 @@ from pytz import timezone
 import pytz
 import requests
 import numpy as np
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
 #BOT_TOKEN = "NTg0ODE4NjA4ODU3OTM5OTc5.XP8kHw.Beigr96LwAu69_hxbBdhW5RzIIE"
 BOT_TOKEN = "NTg0ODM3NTg4NjQ1MzE0NTYz.XPQugQ.4-TLXdoVN0Ca84xaLo4kGoG7Bhk"
@@ -37,6 +39,18 @@ def get_role(msg):
 # Start the BOT!
 
 client = discord.Client()
+
+######################################################
+# Google Sheet Access
+
+def get_clan_list():
+    scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
+    creds = ServiceAccountCredentials.from_json_keyfile_name('google_keys.json', scope)
+    client = gspread.authorize(creds)
+    sheet = client.open("SGC Clans List").sheet1
+    clan_data = sheet.get_all_records()
+    clan_df = pd.DataFrame(clan_data,columns = ['Name','Tag','ID','Platform','Key'])
+    return clan_df
 
 def get_bungie_data(clan_id): #3007121
     # Get the data!
@@ -126,6 +140,46 @@ async def on_message(message):
         listOfChannels = message.guild.text_channels
         for val in listOfChannels:
             await message.channel.send(str(val) + ' ' + str(val.position))
+    if message.content.startswith('!allactivity'):
+        # Get the activity
+        activity_cutoff = datetime.now() - timedelta(days=14)
+        clan_list = get_clan_list()
+        member_list = []
+        for index,clan in clan_list.iterrows():
+            print("Getting members of clan {}".format(clan.Tag))
+            role = discord.utils.get(msg.guild.roles, name=clan['Tag'])
+            for member in role.members:
+                 member_data = { "clan" : clan['Tag'] , "member" :  member.display_name, "discord_active" : False }
+                 member_list.append(member_data)
+        member_df = pd.DataFrame(member_list, columns = ['clan', 'member', 'discord_active'])
+        member_df.member = member_df.member.str.lower()
+        listOfChannels = message.guild.text_channels
+        for channel in listOfChannels:
+            try:
+                history = await channel.history(limit = 10000, after = activity_cutoff, oldest_first = False).flatten()
+                print("Processing channel {} with {} messages in the past 14 days.".format(str(channel), len(history)))
+                for m in history:
+                    member_df.loc[member_df.member == m.author.display_name,'discord_active'] = True
+            except:
+                pass
+        print("Beginning Bungie data process")
+        for index,clan in clan_list.iterrows():
+            print("Getting members of clan {} with Bungie ID # {}".format(clan.Tag,clan.ID))
+            # Get Bungie info
+            bungie_info = get_bungie_data(clan['ID'])
+            # Merge them
+            bungie_info.destinyDisplayName = bungie_info.destinyDisplayName.str.lower()
+            bungie_info['discordName'] = bungie_info.apply(lambda x: 
+                    get_destiny_name(member_df,x.destinyDisplayName),axis=1)
+            
+                all_data = bungie_info.merge(member_df, how = 'outer', left_on='discordName', right_on='member')
+
+
+
+
+                # Save the CSV
+                all_data.to_csv('activity-list.csv')
+        await message.channel.send("Done!")
     if message.content.startswith('!roleactivity'):
         # Get the activity
         activity_cutoff = datetime.now() - timedelta(days=14)
