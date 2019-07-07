@@ -44,7 +44,7 @@ def get_clan_list():
     scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
     creds = ServiceAccountCredentials.from_json_keyfile_name('google_keys.json', scope)
     client = gspread.authorize(creds)
-    sheet = client.open("SGC Clans List").sheet1
+    sheet = client.open("SGC Clans List").worksheet('Key')
     clan_data = sheet.get_all_records()
     clan_df = pd.DataFrame(clan_data,columns = ['Name','Tag','ID','Platform','Key'])
     return clan_df
@@ -194,15 +194,19 @@ async def on_message(message):
         # Now loop through the messages, marking people who have messaged as Active
         activity_cutoff = datetime.now() - timedelta(days=14)
         listOfChannels = message.guild.text_channels
+        max_messages_found = 0
         for channel in listOfChannels:
             try:
                 history = await channel.history(limit = 10000, after = activity_cutoff, oldest_first = False).flatten()
                 print("Processing channel {} with {} messages in the past 14 days.".format(str(channel), len(history)))
+                if max_messages_found < len(history):
+                    max_messages_found = len(history)
                 for m in history:
                     member_df.loc[member_df.member == m.author.display_name,'discord_active'] = True
             except:
                 pass
         # Lets now get the Bungie data
+        print("Completed. Max messages per channel at {}/10000".format(max_messages_found))
         print("Beginning Bungie data process")
         all_bungie_data = pd.DataFrame()
         for index,clan in clan_list.iterrows():
@@ -210,10 +214,10 @@ async def on_message(message):
             # Get Bungie info
             bungie_info = get_bungie_data(clan.ID)
             bungie_info['bungie_clan'] = clan.Tag
-            # Merge them
             bungie_info['discordName'] = bungie_info.apply(lambda x: get_destiny_name(member_df,x.destinyDisplayName, clan.Tag),axis=1)
-            all_bungie_data = pd.concat([all_bungie_data,bungie_info],axis = 0, ignore_index = True, sort = False)
-        
+            # Merge them
+            all_bungie_data = pd.concat([all_bungie_data,bungie_info],axis = 0, ignore_index = True, sort = False)        
+
         # Save to a CSV for debugging
         all_bungie_data.to_csv('bungie.csv')
         member_df.to_csv('discord.csv')
@@ -221,8 +225,6 @@ async def on_message(message):
         # Merge them
         all_data = all_bungie_data.merge(member_df, how = 'outer', left_on='discordName', right_on='member',indicator=True)
         all_data['clan'] = all_data.apply(lambda x: x.bungie_clan if not pd.isnull(x.bungie_clan) else x.discord_clan, axis=1)
-        #all_data.drop(['discordName'],axis=1,inplace=True)
-        #all_data = all_data[['clan','member','destinyDisplayName','memberType','game_active','discord_active']]
         
         all_data.clan.fillna(value='[NONE]',axis=0,inplace=True)
         all_data.member.fillna('',inplace=True)
