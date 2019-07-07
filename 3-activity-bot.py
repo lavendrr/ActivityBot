@@ -147,13 +147,14 @@ async def on_message(message):
         member_list = []
         for index,clan in clan_list.iterrows():
             print("Getting members of clan {}".format(clan.Tag))
-            role = discord.utils.get(msg.guild.roles, name=clan['Tag'])
+            role = discord.utils.get(message.guild.roles, name=clan['Tag'])
             for member in role.members:
                  member_data = { "clan" : clan['Tag'] , "member" :  member.display_name, "discord_active" : False }
                  member_list.append(member_data)
         member_df = pd.DataFrame(member_list, columns = ['clan', 'member', 'discord_active'])
         member_df.member = member_df.member.str.lower()
         listOfChannels = message.guild.text_channels
+        i=0
         for channel in listOfChannels:
             try:
                 history = await channel.history(limit = 10000, after = activity_cutoff, oldest_first = False).flatten()
@@ -162,7 +163,11 @@ async def on_message(message):
                     member_df.loc[member_df.member == m.author.display_name,'discord_active'] = True
             except:
                 pass
+            i = i + 1
+            if (i>3):
+                break
         print("Beginning Bungie data process")
+        all_bungie_data = pd.DataFrame()
         for index,clan in clan_list.iterrows():
             print("Getting members of clan {} with Bungie ID # {}".format(clan.Tag,clan.ID))
             # Get Bungie info
@@ -171,14 +176,10 @@ async def on_message(message):
             bungie_info.destinyDisplayName = bungie_info.destinyDisplayName.str.lower()
             bungie_info['discordName'] = bungie_info.apply(lambda x: 
                     get_destiny_name(member_df,x.destinyDisplayName),axis=1)
-            
-                all_data = bungie_info.merge(member_df, how = 'outer', left_on='discordName', right_on='member')
-
-
-
-
-                # Save the CSV
-                all_data.to_csv('activity-list.csv')
+            all_bungie_data = pd.concat([all_bungie_data,bungie_info],axis = 0, ignore_index = True, sort = False)
+        all_data = all_bungie_data.merge(member_df, how = 'outer', left_on='discordName', right_on='member')
+        # Save the CSV
+        all_data.to_csv('activity-list.csv')
         await message.channel.send("Done!")
     if message.content.startswith('!roleactivity'):
         # Get the activity
