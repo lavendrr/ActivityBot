@@ -12,6 +12,7 @@ import pytz
 import requests
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+import time
 
 BOT_TOKEN = "NTg0ODM3NTg4NjQ1MzE0NTYz.XPQugQ.4-TLXdoVN0Ca84xaLo4kGoG7Bhk"
 
@@ -241,6 +242,9 @@ async def on_message(message):
             clan_data = all_data[all_data.clan == clan.Tag]
             clan_data = clan_data[['member','destinyDisplayName','memberType','game_active','discord_active']]
             upload_clan(clan.Tag, clan_data)
+            print("Uploaded clan {} to Google Sheets, sleeping for 30 secs...".format(clan.Tag))
+            time.sleep(30)
+            
         if len(all_data[all_data.clan == '[NONE]'])>0:
             clan_data = all_data[all_data.clan == '[NONE]']
             clan_data = clan_data[['member','destinyDisplayName','memberType','game_active','discord_active']]
