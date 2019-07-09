@@ -177,6 +177,22 @@ async def on_message(message):
         for val in listOfChannels:
             await message.channel.send(str(val) + ' ' + str(val.position))
     ##############################
+    # !messagemembers
+    if message.content.startswith('!messagemembers'):
+        role = get_role(message)
+        if role != None:    
+            for member in role.members: 
+                if member.dm_channel == None:
+                    await member.create_dm()
+                await member.dm_channel.send('This is a test DM. Please message in the Moctezuma server if you received this message!')
+            await message.channel.send('Done!')
+        else:
+            await message.channel.send('Please enter a valid role.')
+    if message.content.startswith('!testmessage'):
+        if message.author.dm_channel == None:
+            await message.author.create_dm()
+        await message.author.dm_channel.send(content = 'This is a test DM. This message will self-destruct in 15 seconds.', delete_after = 15.0)
+    ##############################
     #### !ALLACTIVITY
     if message.content.startswith('!allactivity'):
         # Get the clan list
@@ -242,7 +258,7 @@ async def on_message(message):
             clan_data = all_data[all_data.clan == clan.Tag]
             clan_data = clan_data[['member','destinyDisplayName','memberType','game_active','discord_active']]
             upload_clan(clan.Tag, clan_data)
-            print("Uploaded clan {} to Google Sheets, sleeping for 30 secs...".format(clan.Tag))
+            print("Uploaded clan {} to Google Sheets, sleeping for 10 secs...".format(clan.Tag))
             time.sleep(10)
             
         if len(all_data[all_data.clan == '[NONE]'])>0:
