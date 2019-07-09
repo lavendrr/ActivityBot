@@ -202,7 +202,15 @@ async def on_message(message):
         for index,clan in clan_list.iterrows():
             # The different clans are identified as roles
             print("Getting members of clan {}".format(clan.Tag))
-            discord_clan = discord.utils.get(message.guild.roles, name=clan.Tag)
+            # Check to see if the tag is ok
+            listOfRoles = message.guild.roles
+            current_clan_tag = clan.Tag
+            for val in listOfRoles:
+                if clan.Tag == str(val)[0:len(clan.Tag)]:
+                    current_clan_tag = str(val)
+            if len(current_clan_tag) != len(clan.Tag):
+                print("Replaced {} with tag {}".format(clan.Tag,current_clan_tag))
+            discord_clan = discord.utils.get(message.guild.roles, name=current_clan_tag)
             if (not discord_clan is None):
                 for member in discord_clan.members:
                      member_data = { "discord_clan" : clan.Tag , "member" :  member.display_name, "discord_active" : False }
