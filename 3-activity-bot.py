@@ -52,7 +52,7 @@ def get_clan_list():
 
 def upload_clan(sh_title, clan_df):
     df = clan_df.copy()
-    df.sort_values(by=['memberType','member'],ascending=[False,True],inplace=True)
+    df.sort_values(by=['memberType','discord_active','game_active','member'],ascending=[False,False,False,True],inplace=True)
     scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
     creds = ServiceAccountCredentials.from_json_keyfile_name('google_keys.json', scope)
     client = gspread.authorize(creds)
@@ -249,7 +249,8 @@ async def on_message(message):
         
         # Merge them
         all_data = all_bungie_data.merge(member_df, how = 'outer', left_on='discordName', right_on='member',indicator=True)
-        all_data['clan'] = all_data.apply(lambda x: x.bungie_clan if not pd.isnull(x.bungie_clan) else x.discord_clan, axis=1)
+        
+        all_data['clan'] = all_data.apply(lambda x: x.discord_clan if not pd.isnull(x.discord_clan) else x.bungie_clan, axis=1)
         
         all_data.clan.fillna(value='[NONE]',axis=0,inplace=True)
         all_data.member.fillna('',inplace=True)
