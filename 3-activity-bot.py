@@ -304,6 +304,7 @@ async def on_message(message):
             all_data = bungie_info.merge(member_df, how = 'outer', left_on='discordName', right_on='member')
             # Save the CSV
             all_data.to_csv('activity-list.csv')
+            print('Clan weekly activity sheet complete.')
             await message.channel.send('Done!')
         else:
             await message.channel.send("Please enter a valid role.")
