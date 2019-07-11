@@ -6,6 +6,7 @@ This is a temporary script file.
 """
 
 import pandas as pd
+import asyncio
 import discord
 from datetime import datetime, timedelta
 import pytz
@@ -13,6 +14,7 @@ import requests
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import time
+import string
 
 BOT_TOKEN = "NTg0ODM3NTg4NjQ1MzE0NTYz.XPQugQ.4-TLXdoVN0Ca84xaLo4kGoG7Bhk"
 
@@ -189,9 +191,22 @@ async def on_message(message):
         else:
             await message.channel.send('Please enter a valid role.')
     if message.content.startswith('!testmessage'):
+        #dm_check = pd.DataFrame(columns = ['discord_name','active','response'])
         if message.author.dm_channel == None:
             await message.author.create_dm()
-        await message.author.dm_channel.send(content = 'This is a test DM. This message will self-destruct in 15 seconds.', delete_after = 15.0)
+        dm = message.author.dm_channel
+        msg = await dm.send(content = 'This is an automated message from Shrouded VII. Please respond to this with a message to avoid the monthly inactivity purge. You have 48 hours after this message is sent to respond. Thank you!')
+        def check(m):
+            return any(m.content) and m.author != client.user and m.channel == dm
+        try:
+            await client.wait_for('message', timeout=60.0, check=check)
+        except asyncio.TimeoutError:
+            await msg.edit(content = 'You did not respond in time and have been marked for inactivity. In the event you are kicked, you can rejoin the clan at any time by reapplying on Bungie.net and in the Discord by @-ing Persepolis or Lavender.')
+            #dm_check.append(message.author.name)
+        else:
+            await msg.edit(content = 'You\'ve been marked for activity. Thanks for staying active in the community!',delete_after = 10.0)
+        #msg = message(content = 'This is a test DM.')
+        #await msg.edit ('15 seconds has elapsed.')
     ##############################
     #### !ALLACTIVITY
     if message.content.startswith('!allactivity'):
@@ -230,7 +245,7 @@ async def on_message(message):
                     member_df.loc[member_df.member == m.author.display_name,'discord_active'] = True
             except:
                 pass
-        # Lets now get the Bungie data
+        # Let's now get the Bungie data
         print("Completed. Max messages per channel at {}/10000".format(max_messages_found))
         print("Beginning Bungie data process")
         all_bungie_data = pd.DataFrame()
@@ -274,7 +289,8 @@ async def on_message(message):
             clan_data = all_data[all_data.clan == '[NONE]']
             clan_data = clan_data[['member','destinyDisplayName','memberType','game_active','discord_active']]
             upload_clan('[NONE]',clan_data)
-        await message.channel.send("Done!")
+        print('Clan weekly activity sheet complete.')
+        await message.channel.send("SGC weekly activity sheets completed!")
         
     if message.content.startswith('!roleactivity'):
         # Get the activity
@@ -305,8 +321,7 @@ async def on_message(message):
             all_data = bungie_info.merge(member_df, how = 'outer', left_on='discordName', right_on='member')
             # Save the CSV
             all_data.to_csv('activity-list.csv')
-            print('Clan weekly activity sheet complete.')
-            await message.channel.send('Done!')
+            await message.channel.send('Done checking activity for ' + role.name + '.')
         else:
             await message.channel.send("Please enter a valid role.")
 
