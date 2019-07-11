@@ -47,18 +47,18 @@ def get_clan_list():
     scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
     creds = ServiceAccountCredentials.from_json_keyfile_name('google_keys.json', scope)
     client = gspread.authorize(creds)
-    sheet = client.open("SGC Clans List").worksheet('Key')
-    clan_data = sheet.get_all_records()
+    keyfile_sheet = client.open("SGC Clans Key File").worksheet('Key')
+    clan_data = keyfile_sheet.get_all_records()
     clan_df = pd.DataFrame(clan_data,columns = ['Name','Tag','ID','Platform','Key'])
     return clan_df
 
-def upload_clan(sh_title, clan_df):
+def upload_clan(sh_title, clan_df, platform):
     df = clan_df.copy()
     df.sort_values(by=['memberType','discord_active','game_active','member'],ascending=[False,False,False,True],inplace=True)
     scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
     creds = ServiceAccountCredentials.from_json_keyfile_name('google_keys.json', scope)
     client = gspread.authorize(creds)
-    sheet = client.open("SGC Clans List")
+    sheet = client.open('SGC Activity ' + platform)
     try:
         worksheet = sheet.worksheet(sh_title)
         sheet.del_worksheet(worksheet)
@@ -281,14 +281,14 @@ async def on_message(message):
         for index,clan in clan_list.iterrows():
             clan_data = all_data[all_data.clan == clan.Tag]
             clan_data = clan_data[['member','destinyDisplayName','memberType','game_active','discord_active']]
-            upload_clan(clan.Tag, clan_data)
+            upload_clan(clan.Tag, clan_data, clan.Platform)
             print("Uploaded clan {} to Google Sheets, sleeping for 10 secs...".format(clan.Tag))
             time.sleep(10)
             
         if len(all_data[all_data.clan == '[NONE]'])>0:
             clan_data = all_data[all_data.clan == '[NONE]']
             clan_data = clan_data[['member','destinyDisplayName','memberType','game_active','discord_active']]
-            upload_clan('[NONE]',clan_data)
+            upload_clan('[NONE]',clan_data, 'PC')
         print('Clan weekly activity sheet complete.')
         await message.channel.send("SGC weekly activity sheets completed!")
         
