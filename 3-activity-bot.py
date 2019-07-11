@@ -182,29 +182,57 @@ async def on_message(message):
     # !messagemembers
     if message.content.startswith('!messagemembers'):
         role = get_role(message)
-        if role != None:    
+        if role != None:
+            dm_activity = []
             for member in role.members: 
                 if member.dm_channel == None:
                     await member.create_dm()
-                await member.dm_channel.send('This is a test DM. Please message in the Moctezuma server if you received this message!')
+                dm = member.dm_channel
+                msg = await dm.send(content = 'This is an automated message from Shrouded VII. Please respond to this with any message to avoid the monthly inactivity purge. You have 48 hours after this message is sent to respond. Thank you!')
+                def check(m):
+                    return any(m.content) and m.author != client.user and m.channel == dm
+                try:
+                    await client.wait_for('message', timeout=60.0, check=check)
+                except asyncio.TimeoutError:
+                    await msg.edit(content = 'You did not respond in time and have been marked for inactivity. In the event you are kicked, you can rejoin the clan at any time by reapplying on Bungie.net and in the Discord by @-ing Persepolis or Lavender.')
+                    dm_activity.append([message.author.name,False,'N/A'])
+                else:
+                    await msg.edit(content = 'You\'ve been marked for activity. Thanks for staying active in the community!')
+                    async for r in dm.history(limit = 1, oldest_first = False):
+                        if r.author == member:
+                            response = r
+                        else:
+                            response = 'Response not found.'
+                    dm_activity.append([message.author.name,True,response.content])
+                dm_activity_df = pd.DataFrame(data = dm_activity, columns = ['Name','Active','Response'])
+                print(dm_activity_df)
+                print(dm_activity)
             await message.channel.send('Done!')
         else:
             await message.channel.send('Please enter a valid role.')
     if message.content.startswith('!testmessage'):
+        dm_activity = []
+        right_now = pytz.utc.localize(datetime.utcnow()).astimezone(pytz.timezone('US/Central'))
         #dm_check = pd.DataFrame(columns = ['discord_name','active','response'])
         if message.author.dm_channel == None:
             await message.author.create_dm()
         dm = message.author.dm_channel
-        msg = await dm.send(content = 'This is an automated message from Shrouded VII. Please respond to this with a message to avoid the monthly inactivity purge. You have 48 hours after this message is sent to respond. Thank you!')
+        msg = await dm.send(content = 'This is an automated message from Shrouded VII. Please respond to this with a message to avoid the monthly inactivity purge. You have 48 hours (until ' + str(right_now + timedelta(days=2)) + ') after this message is sent to respond. Thank you!')
         def check(m):
             return any(m.content) and m.author != client.user and m.channel == dm
         try:
             await client.wait_for('message', timeout=60.0, check=check)
         except asyncio.TimeoutError:
             await msg.edit(content = 'You did not respond in time and have been marked for inactivity. In the event you are kicked, you can rejoin the clan at any time by reapplying on Bungie.net and in the Discord by @-ing Persepolis or Lavender.')
-            #dm_check.append(message.author.name)
+            dm_activity.append([message.author.name,False,'N/A'])
         else:
             await msg.edit(content = 'You\'ve been marked for activity. Thanks for staying active in the community!',delete_after = 10.0)
+            async for r in dm.history(limit = 1, oldest_first = False):
+                response = r
+            dm_activity.append([message.author.name,True,response.content])
+        dm_activity_df = pd.DataFrame(data = dm_activity, columns = ['Name','Active','Response'])
+        print(dm_activity_df)
+        print(dm_activity)
         #msg = message(content = 'This is a test DM.')
         #await msg.edit ('15 seconds has elapsed.')
     ##############################
