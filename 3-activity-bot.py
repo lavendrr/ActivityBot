@@ -35,6 +35,15 @@ def get_role(msg):
     else:
         role = None
     return role
+
+def get_channel(msg):
+    arg_pos = msg.content.find(' ')
+    if arg_pos > 0:
+        arg = msg.content[arg_pos + 1:]
+        channel = discord.utils.get(msg.guild.text_channels, mention=arg)
+    else:
+        channel = None
+    return channel
     
 # Start the BOT!
 
@@ -113,7 +122,7 @@ def get_bungie_data(clan_id):
     # Convert to US Central
     clan['lastOnline'] = clan.lastOnline.dt.tz_convert('US/Central')
     right_now = pytz.utc.localize(datetime.utcnow()).astimezone(pytz.timezone('US/Central'))
-    clan['game_active'] = ((right_now - clan.lastOnline).dt.days <= 14)
+    clan['game_active'] = ((right_now - clan.lastOnline).dt.days <= 10)
     clan = clan[['destinyDisplayName','memberType','game_active']]
     return clan
 
@@ -180,15 +189,16 @@ async def on_message(message):
             await message.channel.send(str(val) + ' ' + str(val.position))
     ##############################
     # !messagemembers
-    if message.content.startswith('!messagemembers'):
+    if message.content.startswith('!dmactivity'):
         role = get_role(message)
+        right_now = pytz.utc.localize(datetime.utcnow()).astimezone(pytz.timezone('US/Central'))
         if role != None:
             dm_activity = []
             for member in role.members: 
                 if member.dm_channel == None:
                     await member.create_dm()
                 dm = member.dm_channel
-                msg = await dm.send(content = 'This is an automated message from Shrouded VII. Please respond to this with any message to avoid the monthly inactivity purge. You have 48 hours after this message is sent to respond. Thank you!')
+                msg = await dm.send(content = 'This is an automated message from Shrouded VII. Please respond to this with a message to avoid the monthly inactivity purge. You have until ' + str((right_now + timedelta(days=2)).strftime('%H:%M %p %Z, %A, %B %d, %Y')) + ' (48 hours) to respond. Thank you!')
                 def check(m):
                     return any(m.content) and m.author != client.user and m.channel == dm
                 try:
@@ -217,7 +227,7 @@ async def on_message(message):
         if message.author.dm_channel == None:
             await message.author.create_dm()
         dm = message.author.dm_channel
-        msg = await dm.send(content = 'This is an automated message from Shrouded VII. Please respond to this with a message to avoid the monthly inactivity purge. You have 48 hours (until ' + str(right_now + timedelta(days=2)) + ') after this message is sent to respond. Thank you!')
+        msg = await dm.send(content = 'This is an automated message from Shrouded VII. Please respond to this with a message to avoid the monthly inactivity purge. You have until ' + str((right_now + timedelta(days=2)).strftime('%H:%M %p %Z, %A, %B %d, %Y')) + ' (48 hours) to respond. Thank you!')
         def check(m):
             return any(m.content) and m.author != client.user and m.channel == dm
         try:
@@ -237,7 +247,7 @@ async def on_message(message):
         #await msg.edit ('15 seconds has elapsed.')
     ##############################
     #### !ALLACTIVITY
-    if message.content.startswith('!allactivity'):
+    if message.content.startswith('!updatesheets'):
         # Get the clan list
         clan_list = get_clan_list()
         # Get a dataframe with the discord names - it's just one Discord server, set them all as Inactive now
@@ -320,7 +330,7 @@ async def on_message(message):
         print('Clan weekly activity sheet complete.')
         await message.channel.send("SGC weekly activity sheets completed!")
         
-    if message.content.startswith('!roleactivity'):
+    '''if message.content.startswith('!roleactivity'):
         # Get the activity
         activity_cutoff = datetime.now() - timedelta(days=14)
         role = get_role(message)
@@ -351,8 +361,36 @@ async def on_message(message):
             all_data.to_csv('activity-list.csv')
             await message.channel.send('Done checking activity for ' + role.name + '.')
         else:
-            await message.channel.send("Please enter a valid role.")
-
+            await message.channel.send("Please enter a valid role.")'''
+    if message.content.startswith('!channelactivity'):
+        channel = get_channel(message)
+        if channel != None:
+            activity_cutoff = datetime.now() - timedelta(days=7)
+            try:
+                history = await channel.history(limit = 10000, after = activity_cutoff, oldest_first = False).flatten()
+                if len(history) > 9999:
+                    await message.channel.send('Channel {} has over 10,000 messages in the past 7 days.'.format(str(channel)))
+                else:
+                    await message.channel.send('Channel {} has {} messages in the past 7 days.'.format(str(channel), len(history)))
+            except:
+                await message.channel.send('The bot does not have access to that channel.')
+        else:
+            await message.channel.send('That role does not exist.')
+        
+    ### MEME COMMANDS
+    """
+    if message.content.startswith('!hoesmad'):
+        x = 0
+        while x < 3:
+            await message.channel.send('hoes mad x' + str(x + 1))
+            x += 1
+    if message.content.startswith('!f'):
+        await message.channel.send('F')
+    if message.content.startswith('!bruh'):
+        await message.channel.send('bruh moment')
+    if message.content.startswith('!vii'):
+        await message.channel.send('VII best clan')
+    """
 @client.event
 async def on_ready():
     print('Logged in as')
