@@ -14,7 +14,6 @@ import requests
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import time
-import string
 
 BOT_TOKEN = "NTg0ODM3NTg4NjQ1MzE0NTYz.XPQugQ.4-TLXdoVN0Ca84xaLo4kGoG7Bhk"
 
@@ -44,7 +43,77 @@ def get_channel(msg):
     else:
         channel = None
     return channel
-    
+
+# MULTIPLE CHANNEL GET
+def get_multiple_channels(msg):
+    a = msg.content.split(' | ')
+    b = a[0].split(' ')
+    c = a[1]
+    del b[0]
+    channel_list = []
+    for d in b:
+        channel_list.append(discord.utils.get(msg.guild.text_channels, mention = d))
+    channel_list.append(discord.utils.get(msg.guild.text_channels, mention = c))
+    return channel_list
+
+# ACTIVITY LEADERBOARD
+# SYNTAX = !leaderboard [# mention of channel to be checked], [CHANNEL], [CHANNEL] | [CHANNEL TO POST LEADERBOARD MESSAGE IN]
+async def update_leaderboard(message):
+    channel_list = get_multiple_channels(message)
+    right_now = pytz.utc.localize(datetime.utcnow()).astimezone(pytz.timezone('US/Central'))
+    # Time since Tuesday (Noon CST - Destiny 2 Reset)
+    # Monday conditions
+    if right_now.weekday() == 0 and right_now.hour >= 12:
+        time_since_tues = timedelta(hours = right_now.hour - 12, minutes = right_now.minute, days = 6)
+    elif right_now.weekday() == 0 and right_now.hour < 12:
+        time_since_tues = timedelta(hours = right_now.hour + 12, minutes = right_now.minute, days = 5)
+    # Other weekday conditions
+    elif right_now.hour >= 12:
+        time_since_tues = timedelta(hours = right_now.hour - 12, minutes = right_now.minute, days = (right_now.weekday() - 1))
+    elif right_now.hour < 12:
+        time_since_tues = timedelta(hours = right_now.hour + 12, minutes = right_now.minute, days = (right_now.weekday() - 2))
+    # Start check
+    if channel_list != []:
+        try:
+            activity_cutoff = datetime.now() - time_since_tues
+            leaderboard = {}
+            lb_channel = channel_list[len(channel_list) - 1]
+            for a in channel_list[:len(channel_list) - 1]:
+                history = await a.history(limit = 10000, after = activity_cutoff, oldest_first = False).flatten()
+                for m in history:
+                    if m.author.display_name in leaderboard:
+                        leaderboard[m.author.display_name] += 1
+                    else:
+                        leaderboard[m.author.display_name] = 1
+            msg = None
+            lb_sorted = {}
+            lb_string = '__**Shrouded VII Discord Activity Leaderboard**__\n\n'
+            count = 0
+            for key, value in sorted(leaderboard.items(), key=lambda item: item[1], reverse = True):
+                if count < 10:
+                    lb_sorted[key] = value
+                    count += 1
+                else:
+                    break
+            for item, amount in lb_sorted.items():
+                lb_string += ("{} - {} messages\n".format(item, amount))
+            lb_string += ('\nUpdated ' + right_now.strftime('%H:%M %p %Z on %A, %B %d.'))
+            async for m in lb_channel.history(limit = 2):
+                if m.author == client.user:
+                    msg = m
+                    break
+            if msg == None:
+                await lb_channel.send(lb_string)
+                time.sleep(1)
+                await lb_channel.last_message.pin()
+                time.sleep(1)
+                await lb_channel.last_message.delete()
+            else:
+                await msg.edit(content = lb_string)
+        except:
+            await message.channel.send('The bot does not have access to that channel.')
+    else:
+        await message.channel.send('That channel does not exist.')
 # Start the BOT!
 
 client = discord.Client()
@@ -376,7 +445,8 @@ async def on_message(message):
                 await message.channel.send('The bot does not have access to that channel.')
         else:
             await message.channel.send('That role does not exist.')
-        
+    if message.content.startswith('!leaderboard'):
+        await update_leaderboard(message)
     ### MEME COMMANDS
     """
     if message.content.startswith('!hoesmad'):
