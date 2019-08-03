@@ -15,7 +15,8 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import time
 
-BOT_TOKEN = "NTg0ODM3NTg4NjQ1MzE0NTYz.XPQugQ.4-TLXdoVN0Ca84xaLo4kGoG7Bhk"
+# Load credentials and tokens
+creds = pd.read_csv('credentials/credentials.csv').set_index('key').transpose()
 
 def get_member(msg):
     arg_pos = msg.content.find(' ')
@@ -468,5 +469,5 @@ async def on_ready():
     print(client.user.id)
     print('------')
 
-client.run(BOT_TOKEN)
+client.run(creds.bot_token)
 
