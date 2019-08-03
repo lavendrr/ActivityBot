@@ -6,7 +6,9 @@ old/
 
 # Don't upload Misc Files
 ActivityBot/**
+ActivityBot/**/*
 circleci/
 
 # Don't upload Spyder project
-.spy*
+.spyproject/**
+.spyproject/**/*
