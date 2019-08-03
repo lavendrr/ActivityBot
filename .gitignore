@@ -10,5 +10,5 @@ ActivityBot/**/*
 circleci/
 
 # Don't upload Spyder project
-.spyproject/**
-.spyproject/**/*
+.spyproject
+.spyderproject
