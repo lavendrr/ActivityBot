@@ -1,0 +1,7 @@
+# Don't upload credentials
+credentials/
+# Don't upload old files
+old/
+# Don't upload Misc Files
+ActivityBot/
+circleci/
