@@ -1,5 +1,6 @@
 # ActivityBot
 Author: Ricardo Moctezuma (Lavender) - Officer of Shrouded VII
+
 Contributors: Roberto Moctezuma
 
 This is a Discord bot (tag is Activity Bot#0423) developed for the Shrouded Gaming Community.
