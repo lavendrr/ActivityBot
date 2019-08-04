@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Spyder Editor
-
-This is a temporary script file.
+Activity Bot created for the Shrouded Gaming Community
+Author: Ricardo Moctezuma (Lavender) - Officer of Shrouded VII
+Contributors: Roberto Moctezuma
 """
 
 import pandas as pd
