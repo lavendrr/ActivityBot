@@ -168,7 +168,7 @@ def get_bungie_data(clan_id):
     call = "/GroupV2/" + str(clan_id) + "/Members/"
     
     # Get the data from the API
-    response = requests.get(bungie_api + call, headers =  { 'X-API-Key' : creds.bungie_api })
+    response = requests.get(bungie_api + call, headers =  { 'X-API-Key' : creds.bungie_api[0] })
     
     # Convert the JSON response to a Pandas dataframe and extract results
     df = pd.read_json(response.text)
@@ -469,5 +469,5 @@ async def on_ready():
     print(client.user.id)
     print('------')
 
-client.run(creds.bot_token)
+client.run(creds.bot_token[0])
 
