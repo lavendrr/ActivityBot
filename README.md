@@ -1,5 +1,5 @@
 # ActivityBot
-Author: Ricardo Moctezuma (Lavender) - Officer of Shrouded VII
+Author: Ricardo Moctezuma (Lavender) - Admin of Shrouded VII
 
 Contributors: Roberto Moctezuma
 
