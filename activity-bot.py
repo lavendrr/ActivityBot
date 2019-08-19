@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Activity Bot created for the Shrouded Gaming Community
-Author: Ricardo Moctezuma (Lavender) - Officer of Shrouded VII
+Author: Ricardo Moctezuma (Lavender) - Admin of Shrouded VII
 Contributors: Roberto Moctezuma
 """
 
