@@ -64,17 +64,19 @@ def get_multiple_channels(msg):
 async def update_leaderboard(message, lb_msg):
     channel_list = get_multiple_channels(message)
     right_now = pytz.utc.localize(datetime.utcnow()).astimezone(pytz.timezone('US/Central'))
-    # Time since Tuesday (Noon CST - Destiny 2 Reset)
-    # Monday conditions
-    if right_now.weekday() == 0 and right_now.hour >= 12:
-        time_since_tues = timedelta(hours = right_now.hour - 12, minutes = right_now.minute, days = 6)
-    elif right_now.weekday() == 0 and right_now.hour < 12:
-        time_since_tues = timedelta(hours = right_now.hour + 12, minutes = right_now.minute, days = 5)
-    # Other weekday conditions
-    elif right_now.hour >= 12:
-        time_since_tues = timedelta(hours = right_now.hour - 12, minutes = right_now.minute, days = (right_now.weekday() - 1))
-    elif right_now.hour < 12:
-        time_since_tues = timedelta(hours = right_now.hour + 12, minutes = right_now.minute, days = (right_now.weekday() - 2))
+    # Time since Tuesday (Noon CST - Destiny 2 Reset)  
+    # Tuesday Conditions      
+    if right_now.weekday() == 1:
+        if right_now.hour >= 12:
+            time_since_tues = timedelta(hours = right_now.hour - 12, minutes = right_now.minute, days = 0)
+        else:
+            time_since_tues = timedelta(hours = right_now.hour + 12, minutes = right_now.minute, days = 6)
+    # Non-Tuesday conditions
+    else:
+        if right_now.hour >= 12:
+            time_since_tues = timedelta(hours = right_now.hour - 12, minutes = right_now.minute, days = right_now.weekday() - 1)
+        else:
+            time_since_tues = timedelta(hours = right_now.hour + 12, minutes = right_now.minute, days = right_now.weekday() - 2)
     # Start check
     if channel_list != []:
         try:
