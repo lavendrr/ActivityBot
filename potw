@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Aug 26 10:42:29 2019
+
+@author: rmoctezuma
+"""
+# POTW AUTOMATION
+
+import pandas as pd
+from datetime import datetime, timedelta
+import pytz
+import requests
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+import time
+
+# Load credentials and tokens
+creds = pd.read_csv('credentials/credentials.csv').set_index('key').transpose()
+google_keys_file = 'credentials/google_keys.json'
+
+
+# Get Clan IDs and names
+def get_clan_list():
+    scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
+    creds = ServiceAccountCredentials.from_json_keyfile_name(google_keys_file, scope)
+    client = gspread.authorize(creds)
+    keyfile_sheet = client.open("SGC Clans Key File").worksheet('Key')
+    clan_data = keyfile_sheet.get_all_records()
+    clan_df = pd.DataFrame(clan_data,columns = ['Name','Tag','ID','Platform','Key'])
+    return clan_df
+
+def get_bungie_data(clan_id):
+    # Get the data!
+    bungie_api = "https://www.bungie.net/Platform"
+    call = "/GroupV2/" + str(clan_id) + "/Members/"
+    
+    # Get the data from the API
+    response = requests.get(bungie_api + call, headers =  { 'X-API-Key' : creds.bungie_api.value })
+    
+    # Convert the JSON response to a Pandas dataframe and extract results
+    df = pd.read_json(response.text)
+    results = df.loc['results','Response']
+    return results
+
+    # Now extract the goodies!
+    clan = pd.DataFrame(results,columns = ['memberType','isOnline','lastOnlineStatusChange','groupId','destinyUserInfo',
+                                           'bungieNetUserInfo','joinDate'])
+    clan['destinyDisplayName'] = clan.apply(lambda x: x.destinyUserInfo['displayName'],axis=1)
+    clan['destinyMembershipType'] = clan.apply(lambda x: x.destinyUserInfo['membershipType'],axis=1)
+    clan['destinyMembershipId'] = clan.apply(lambda x: x.destinyUserInfo['membershipId'],axis=1)
+    clan['bungieSupplementalDisplayName'] = clan.apply(lambda x: x.bungieNetUserInfo['supplementalDisplayName'],axis=1)
+    clan['bungieIconPath'] = clan.apply(lambda x: x.bungieNetUserInfo['iconPath'],axis=1)
+    clan['bungieMembershipType'] = clan.apply(lambda x: x.bungieNetUserInfo['membershipType'],axis=1)
+    clan['bungieMembershipId'] = clan.apply(lambda x: x.bungieNetUserInfo['membershipId'],axis=1)
+    clan['bungieDisplayName'] = clan.apply(lambda x: x.bungieNetUserInfo['displayName'],axis=1)
+    #clan['milestoneCompletionStatus'] = clan.apply(lambda x: x.bungieNetUserInfo[])
+    
+    # Convert naive datetime to date-aware
+    clan['lastOnline'] = pd.to_datetime(clan.lastOnlineStatusChange, unit = 's').dt.tz_localize('UTC')
+    
+    # Convert to US Central
+    clan['lastOnline'] = clan.lastOnline.dt.tz_convert('US/Central')
+    right_now = pytz.utc.localize(datetime.utcnow()).astimezone(pytz.timezone('US/Central'))
+    clan['game_active'] = ((right_now - clan.lastOnline).dt.days <= 10)
+    # clan = clan[['destinyDisplayName','memberType','game_active']]
+    return clan
