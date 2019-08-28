@@ -30,19 +30,39 @@ def get_clan_list():
     clan_df = pd.DataFrame(clan_data,columns = ['Name','Tag','ID','Platform','Key'])
     return clan_df
 
-def get_bungie_data(clan_id):
+def get_clan_members(clan_id):
     # Get the data!
     bungie_api = "https://www.bungie.net/Platform"
     call = "/GroupV2/" + str(clan_id) + "/Members/"
-    
+    #call = "/User/GetBungieNetUserById/" + clan_id + "/"
     # Get the data from the API
     response = requests.get(bungie_api + call, headers =  { 'X-API-Key' : creds.bungie_api.value })
     
     # Convert the JSON response to a Pandas dataframe and extract results
-    df = pd.read_json(response.text)
-    results = df.loc['results','Response']
+    #df = pd.read_json(response.text)
+    #results = df.loc['results','Response']
+    results = response.json()
     return results
 
+def get_char_id(m_type, d2_id):
+    bungie_api = "https://www.bungie.net/Platform"
+    call = "/Destiny2/" + m_type + "/Account/" + d2_id + "/Stats/"
+    #call = "/User/GetBungieNetUserById/" + clan_id + "/"
+    # Get the data from the API
+    response = requests.get(bungie_api + call, headers =  { 'X-API-Key' : creds.bungie_api.value })
+    results = response.json()
+    return results
+
+def get_char(m_type, d2_id, char_id):
+    bungie_api = "https://www.bungie.net/Platform"
+    call = "/Destiny2/" + m_type + "/Profile/" + d2_id + "/Character/" + char_id + "/?components=202"
+    #call = "/User/GetBungieNetUserById/" + clan_id + "/"
+    # Get the data from the API
+    response = requests.get(bungie_api + call, headers =  { 'X-API-Key' : creds.bungie_api.value })
+    results = response.json()
+    return results
+
+'''
     # Now extract the goodies!
     clan = pd.DataFrame(results,columns = ['memberType','isOnline','lastOnlineStatusChange','groupId','destinyUserInfo',
                                            'bungieNetUserInfo','joinDate'])
@@ -65,3 +85,4 @@ def get_bungie_data(clan_id):
     clan['game_active'] = ((right_now - clan.lastOnline).dt.days <= 10)
     # clan = clan[['destinyDisplayName','memberType','game_active']]
     return clan
+    '''
