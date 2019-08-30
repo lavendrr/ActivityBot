@@ -39,23 +39,33 @@ def get_clan_members(clan_id):
     response = requests.get(bungie_api + call, headers =  { 'X-API-Key' : creds.bungie_api.value })
     
     # Convert the JSON response to a Pandas dataframe and extract results
-    #df = pd.read_json(response.text)
-    #results = df.loc['results','Response']
-    results = response.json()
+    df = pd.read_json(response.text)
+    results = df.loc['results','Response']
+    #results = response.json()
     return results
 
 def get_char_id(m_type, d2_id):
     bungie_api = "https://www.bungie.net/Platform"
-    call = "/Destiny2/" + m_type + "/Account/" + d2_id + "/Stats/"
-    #call = "/User/GetBungieNetUserById/" + clan_id + "/"
+    call = "/Destiny2/" + m_type + "/Profile/" + d2_id + "/?components=200"
     # Get the data from the API
     response = requests.get(bungie_api + call, headers =  { 'X-API-Key' : creds.bungie_api.value })
+    #df = pd.read_json(response.text)
+    #results = df.loc['results','Response']
     results = response.json()
     return results
 
 def get_char(m_type, d2_id, char_id):
     bungie_api = "https://www.bungie.net/Platform"
     call = "/Destiny2/" + m_type + "/Profile/" + d2_id + "/Character/" + char_id + "/?components=202"
+    #call = "/User/GetBungieNetUserById/" + clan_id + "/"
+    # Get the data from the API
+    response = requests.get(bungie_api + call, headers =  { 'X-API-Key' : creds.bungie_api.value })
+    results = response.json()
+    return results
+
+def get_milestone(ms_hash):
+    bungie_api = "https://www.bungie.net/Platform"
+    call = "/Destiny2/Milestones/" + ms_hash + "/Content/"
     #call = "/User/GetBungieNetUserById/" + clan_id + "/"
     # Get the data from the API
     response = requests.get(bungie_api + call, headers =  { 'X-API-Key' : creds.bungie_api.value })
