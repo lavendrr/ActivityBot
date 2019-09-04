@@ -439,6 +439,67 @@ async def on_message(message):
             await message.channel.send('That role does not exist.')
     if message.content.startswith('!leaderboard'):
         channel_list = get_multiple_channels(message)
+    right_now = pytz.utc.localize(datetime.utcnow()).astimezone(pytz.timezone('US/Central'))
+    # Time since Tuesday (Noon CST - Destiny 2 Reset)  
+    # Tuesday Conditions      
+    if right_now.weekday() == 1:
+        if right_now.hour >= 12:
+            time_since_tues = timedelta(hours = right_now.hour - 12, minutes = right_now.minute, days = 0)
+        else:
+            time_since_tues = timedelta(hours = right_now.hour + 12, minutes = right_now.minute, days = 6)
+    # Non-Tuesday conditions
+    else:
+        if right_now.hour >= 12:
+            time_since_tues = timedelta(hours = right_now.hour - 12, minutes = right_now.minute, days = right_now.weekday() - 1)
+        else:
+            time_since_tues = timedelta(hours = right_now.hour + 12, minutes = right_now.minute, days = right_now.weekday() - 2)
+    # Start check
+    if channel_list != []:
+        try:
+            activity_cutoff = datetime.now() - time_since_tues
+            leaderboard = {}
+            lb_channel = channel_list[len(channel_list) - 1]
+            for a in channel_list[:len(channel_list) - 1]:
+                history = await a.history(limit = 10000, after = activity_cutoff, oldest_first = False).flatten()
+                for m in history:
+                    if m.author.display_name in leaderboard:
+                        leaderboard[m.author.display_name] += 1
+                    else:
+                        leaderboard[m.author.display_name] = 1
+            msg = None
+            lb_sorted = {}
+            lb_string = '__**Shrouded Gaming Activity Leaderboard**__\n\n'
+            count = 0
+            for key, value in sorted(leaderboard.items(), key=lambda item: item[1], reverse = True):
+                if count < 10:
+                    lb_sorted[key] = value
+                    count += 1
+                else:
+                    break
+            for item, amount in lb_sorted.items():
+                lb_string += ("{} - {} messages\n".format(item, amount))
+            lb_string += ('\nUpdated ' + right_now.strftime('%H:%M %p %Z on %A, %B %d.'))
+            async for m in lb_channel.history(limit = 2):
+                if m.author == client.user:
+                    msg = m
+                    break
+            if msg == None:
+                await lb_channel.send(lb_string)
+                time.sleep(1)
+                await lb_channel.last_message.pin()
+                time.sleep(1)
+                await lb_channel.last_message.delete()
+            else:
+                await msg.edit(content = lb_string)
+        except:
+            await message.channel.send('The bot does not have access to that channel.')
+    else:
+        await message.channel.send('That channel does not exist.')
+        
+        
+        
+        
+        '''channel_list = get_multiple_channels(message)
         right_now = pytz.utc.localize(datetime.utcnow()).astimezone(pytz.timezone('US/Central'))
         # Time since Tuesday (Noon CST - Destiny 2 Reset)
         # Monday conditions
@@ -489,7 +550,7 @@ async def on_message(message):
                 await update_leaderboard(message, lb_msg)
         else:
             await message.channel.send('That channel does not exist.')
-            
+        '''
     ### MEME COMMANDS
     """
     if message.content.startswith('!hoesmad'):
