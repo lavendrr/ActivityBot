@@ -59,7 +59,7 @@ def get_multiple_channels(msg):
     return channel_list
 
 # ACTIVITY LEADERBOARD
-# SYNTAX = !leaderboard [# mention of channel to be checked], [#CHANNEL], [#CHANNEL] | [#CHANNEL TO POST LEADERBOARD MESSAGE IN]
+# SYNTAX = !leaderboard [# mention of channel to be checked] [#CHANNEL] [#CHANNEL] | [#CHANNEL TO POST LEADERBOARD MESSAGE IN]
 async def update_leaderboard(message):
     channel_list = get_multiple_channels(message)
     lb_channel = channel_list[-1]
@@ -106,23 +106,27 @@ async def update_leaderboard(message):
                     break
             for item, amount in lb_sorted.items():
                 lb_string += ("{} - {} messages\n".format(item, amount))
-            lb_string += ('\nUpdated ' + right_now.strftime('%H:%M %p %Z on %A, %B %d.'))
+            lb_string += ('\nGenerated from these channels: ')
+            for a in channel_list[:len(channel_list) - 1]:
+                lb_string += (a.mention + ' ')
+            lb_string += ('\n\nUpdated ' + right_now.strftime('%H:%M %p %Z on %A, %B %d.'))
             '''# Auto-update
             await lb_msg.edit(content = lb_string)'''
-            async for m in lb_channel.history(limit = 2):
-                if m.author == client.user:
+            msg = None
+            async for m in lb_channel.history(limit = 10000):
+                if m.content.startswith('__**Shrouded Gaming Activity Leaderboard**__') and m.author == client.user:
                     msg = m
                     break
             if msg == None:
                 await lb_channel.send(lb_string)
-                time.sleep(1)
                 await lb_channel.last_message.pin()
             else:
                 await msg.edit(content = lb_string)
-        except discord.Forbidden:
-            await message.channel.send('The bot does not have access to that channel.')
+        except:
+            pass
     else:
         await message.channel.send('That channel does not exist.')
+        
 # Start the BOT!
 
 client = discord.Client()
