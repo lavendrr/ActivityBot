@@ -14,7 +14,6 @@ import requests
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import time
-from enum import Enum
 
 # Load credentials and tokens
 creds = pd.read_csv('credentials/credentials.csv').set_index('key').transpose()
@@ -61,8 +60,9 @@ def get_multiple_channels(msg):
 
 # ACTIVITY LEADERBOARD
 # SYNTAX = !leaderboard [# mention of channel to be checked], [#CHANNEL], [#CHANNEL] | [#CHANNEL TO POST LEADERBOARD MESSAGE IN]
-async def update_leaderboard(message, lb_msg):
+async def update_leaderboard(message):
     channel_list = get_multiple_channels(message)
+    lb_channel = channel_list[-1]
     right_now = pytz.utc.localize(datetime.utcnow()).astimezone(pytz.timezone('US/Central'))
     # Time since Tuesday (Noon CST - Destiny 2 Reset)  
     # Tuesday Conditions      
@@ -86,7 +86,7 @@ async def update_leaderboard(message, lb_msg):
     # Start check
     if channel_list != []:
         try:
-            activity_cutoff = right_now - time_since_tues
+            activity_cutoff = datetime.now() - time_since_tues
             leaderboard = {}
             for a in channel_list[:len(channel_list) - 1]:
                 history = await a.history(limit = 10000, after = activity_cutoff, oldest_first = False).flatten()
@@ -107,8 +107,18 @@ async def update_leaderboard(message, lb_msg):
             for item, amount in lb_sorted.items():
                 lb_string += ("{} - {} messages\n".format(item, amount))
             lb_string += ('\nUpdated ' + right_now.strftime('%H:%M %p %Z on %A, %B %d.'))
-            # Auto-update
-            await lb_msg.edit(content = lb_string)
+            '''# Auto-update
+            await lb_msg.edit(content = lb_string)'''
+            async for m in lb_channel.history(limit = 2):
+                if m.author == client.user:
+                    msg = m
+                    break
+            if msg == None:
+                await lb_channel.send(lb_string)
+                time.sleep(1)
+                await lb_channel.last_message.pin()
+            else:
+                await msg.edit(content = lb_string)
         except discord.Forbidden:
             await message.channel.send('The bot does not have access to that channel.')
     else:
@@ -444,121 +454,8 @@ async def on_message(message):
         else:
             await message.channel.send('That role does not exist.')
     if message.content.startswith('!leaderboard'):
-        channel_list = get_multiple_channels(message)
-    right_now = pytz.utc.localize(datetime.utcnow()).astimezone(pytz.timezone('US/Central'))
-    # Time since Tuesday (Noon CST - Destiny 2 Reset)  
-    # Tuesday Conditions      
-    if right_now.weekday() == 1:
-        if right_now.hour >= 12:
-            time_since_tues = timedelta(hours = right_now.hour - 12, minutes = right_now.minute, days = 0)
-        else:
-            time_since_tues = timedelta(hours = right_now.hour + 12, minutes = right_now.minute, days = 6)
-    # Non-Tuesday conditions
-    else:
-        if right_now.hour >= 12:
-            time_since_tues = timedelta(hours = right_now.hour - 12, minutes = right_now.minute, days = right_now.weekday() - 1)
-        else:
-            time_since_tues = timedelta(hours = right_now.hour + 12, minutes = right_now.minute, days = right_now.weekday() - 2)
-    # Start check
-    if channel_list != []:
-        try:
-            activity_cutoff = datetime.now() - time_since_tues
-            leaderboard = {}
-            lb_channel = channel_list[len(channel_list) - 1]
-            for a in channel_list[:len(channel_list) - 1]:
-                history = await a.history(limit = 10000, after = activity_cutoff, oldest_first = False).flatten()
-                for m in history:
-                    if m.author.display_name in leaderboard:
-                        leaderboard[m.author.display_name] += 1
-                    else:
-                        leaderboard[m.author.display_name] = 1
-            msg = None
-            lb_sorted = {}
-            lb_string = '__**Shrouded Gaming Activity Leaderboard**__\n\n'
-            count = 0
-            for key, value in sorted(leaderboard.items(), key=lambda item: item[1], reverse = True):
-                if count < 10:
-                    lb_sorted[key] = value
-                    count += 1
-                else:
-                    break
-            for item, amount in lb_sorted.items():
-                lb_string += ("{} - {} messages\n".format(item, amount))
-            lb_string += ('\nUpdated ' + right_now.strftime('%H:%M %p %Z on %A, %B %d.'))
-            async for m in lb_channel.history(limit = 2):
-                if m.author == client.user:
-                    msg = m
-                    break
-            if msg == None:
-                await lb_channel.send(lb_string)
-                time.sleep(1)
-                await lb_channel.last_message.pin()
-                time.sleep(1)
-                await lb_channel.last_message.delete()
-            else:
-                await msg.edit(content = lb_string)
-        except:
-            await message.channel.send('The bot does not have access to that channel.')
-    else:
-        await message.channel.send('That channel does not exist.')
-        
-        
-        
-        
-        '''channel_list = get_multiple_channels(message)
-        right_now = pytz.utc.localize(datetime.utcnow()).astimezone(pytz.timezone('US/Central'))
-        # Time since Tuesday (Noon CST - Destiny 2 Reset)
-        # Monday conditions
-        if right_now.weekday() == 0 and right_now.hour >= 12:
-            time_since_tues = timedelta(hours = right_now.hour - 12, minutes = right_now.minute, days = 6)
-        elif right_now.weekday() == 0 and right_now.hour < 12:
-            time_since_tues = timedelta(hours = right_now.hour + 12, minutes = right_now.minute, days = 5)
-        # Other weekday conditions
-        elif right_now.hour >= 12:
-            time_since_tues = timedelta(hours = right_now.hour - 12, minutes = right_now.minute, days = (right_now.weekday() - 1))
-        elif right_now.hour < 12:
-            time_since_tues = timedelta(hours = right_now.hour + 12, minutes = right_now.minute, days = (right_now.weekday() - 2))
-        # Start check
-        if channel_list != []:
-            activity_cutoff = datetime.now() - time_since_tues
-            leaderboard = {}
-            lb_channel = channel_list[len(channel_list) - 1]
-            for a in channel_list[:len(channel_list) - 1]:
-                history = await a.history(limit = 10000, after = activity_cutoff, oldest_first = False).flatten()
-                for m in history:
-                    if m.author.display_name in leaderboard:
-                        leaderboard[m.author.display_name] += 1
-                    else:
-                        leaderboard[m.author.display_name] = 1
-            lb_sorted = {}
-            lb_string = '__**Shrouded Gaming Activity Leaderboard**__\n\n'
-            count = 0
-            for key, value in sorted(leaderboard.items(), key=lambda item: item[1], reverse = True):
-                if count < 10:
-                    lb_sorted[key] = value
-                    count += 1
-                else:
-                    break
-            for item, amount in lb_sorted.items():
-                lb_string += ("{} - {} messages\n".format(item, amount))
-            lb_string += ('\nUpdated ' + right_now.strftime('%H:%M %p %Z on %A, %B %d.'))
-            # Auto-updating WIP
-            await lb_channel.send(lb_string)
-            time.sleep(1)
-            lb_msg = lb_channel.last_message
-            await lb_msg.pin()
-            time.sleep(1)
-            for a in await lb_channel.history(limit = 3).flatten():  
-                if a.type == discord.MessageType.pins_add:
-                    await a.delete()
-            while lb_msg != None:
-                time.wait(60)
-                await update_leaderboard(message, lb_msg)
-        else:
-            await message.channel.send('That channel does not exist.')
-        '''
+        await update_leaderboard(message)
     ### MEME COMMANDS
-    """
     if message.content.startswith('!hoesmad'):
         x = 0
         while x < 3:
@@ -570,7 +467,7 @@ async def on_message(message):
         await message.channel.send('bruh moment')
     if message.content.startswith('!vii'):
         await message.channel.send('VII best clan')
-    """
+        
 @client.event
 async def on_ready():
     print('Logged in as')
