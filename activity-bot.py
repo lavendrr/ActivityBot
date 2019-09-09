@@ -71,7 +71,13 @@ async def update_leaderboard(message, lb_msg):
             time_since_tues = timedelta(hours = right_now.hour - 12, minutes = right_now.minute, days = 0)
         else:
             time_since_tues = timedelta(hours = right_now.hour + 12, minutes = right_now.minute, days = 6)
-    # Non-Tuesday conditions
+    # Monday conditions
+    elif right_now.weekday() == 0:
+        if right_now.hour >= 12:
+            time_since_tues = timedelta(hours = right_now.hour - 12, minutes = right_now.minute, days = 6)
+        else:
+            time_since_tues = timedelta(hours = right_now.hour + 12, minutes = right_now.minute, days = 5)
+    # Other weekday conditions
     else:
         if right_now.hour >= 12:
             time_since_tues = timedelta(hours = right_now.hour - 12, minutes = right_now.minute, days = right_now.weekday() - 1)
@@ -80,7 +86,7 @@ async def update_leaderboard(message, lb_msg):
     # Start check
     if channel_list != []:
         try:
-            activity_cutoff = datetime.now() - time_since_tues
+            activity_cutoff = right_now - time_since_tues
             leaderboard = {}
             for a in channel_list[:len(channel_list) - 1]:
                 history = await a.history(limit = 10000, after = activity_cutoff, oldest_first = False).flatten()
@@ -103,7 +109,7 @@ async def update_leaderboard(message, lb_msg):
             lb_string += ('\nUpdated ' + right_now.strftime('%H:%M %p %Z on %A, %B %d.'))
             # Auto-update
             await lb_msg.edit(content = lb_string)
-        except:
+        except discord.Forbidden:
             await message.channel.send('The bot does not have access to that channel.')
     else:
         await message.channel.send('That channel does not exist.')
