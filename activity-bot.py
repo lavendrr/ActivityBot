@@ -120,8 +120,10 @@ async def update_leaderboard(message):
             if msg == None:
                 await lb_channel.send(lb_string)
                 await lb_channel.last_message.pin()
+                await message.channel.send('Leaderboard created!')
             else:
                 await msg.edit(content = lb_string)
+                await message.channel.send('Leaderboard updated!')
         except:
             pass
     else:
