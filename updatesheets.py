@@ -112,10 +112,10 @@ def get_destiny_name(member_df, bungie_name, bungie_clan):
 # Update sheets
 async def update_sheets():
     global client
-    print(client.user.name)
     server = client.get_guild(100291727209807872)
-    print(server.name)
-    await server.get_channel(594568388869881856).send('Starting sheet updates at {}...'.format(datetime.now(pytz.timezone('US/Central')).strftime('%Y %m %d %H:%M:%S %Z')))
+    print('Server: ' + server.name)
+    print('Commencing sheet updates.')
+    await server.get_channel(594568388869881856).send('Starting sheet updates at {}...'.format(datetime.now(pytz.timezone('US/Central')).strftime('%H:%M:%S %Z on %b %d, %Y')))
     # Get the clan list
     clan_list = get_clan_list()
     # Get a dataframe with the discord names - it's just one Discord server, set them all as Inactive now
@@ -195,17 +195,21 @@ async def update_sheets():
         clan_data = all_data[all_data.clan == '[NONE]']
         clan_data = clan_data[['member','destinyDisplayName','memberType','game_active','discord_active']]
         upload_clan('[NONE]',clan_data, 'PC')
-    print('Clan weekly activity sheet complete.')
-    await server.get_channel(594568388869881856).send("Sheet updates completed at {}!".format(datetime.now(pytz.timezone('US/Central')).strftime('%Y %m %d %H:%M:%S %Z')))
+    print('Sheet updates completed.')
+    await server.get_channel(594568388869881856).send("Sheet updates completed at {}!".format(datetime.now(pytz.timezone('US/Central')).strftime('%H:%M:%S %Z on %b %d, %Y')))
 
 @client.event
 async def on_ready():
     print('Logged in as')
     print(client.user.name)
     print(client.user.id)
+    print('Time: {}'.format(datetime.now(pytz.timezone('US/Central')).strftime('%H:%M:%S %Z on %b %d, %Y')))
     print('------')
     await update_sheets()
-    print('Sheets updated!')
+    print('------')
+    print('Logging out.')
+    print('Time: {}'.format(datetime.now(pytz.timezone('US/Central')).strftime('%H:%M:%S %Z on %b %d, %Y')))
+    sys.exit()
     
 print('Attempting to log in with token: {}'.format(bot_token))
 client.run(bot_token)
