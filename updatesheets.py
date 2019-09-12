@@ -15,10 +15,15 @@ import requests
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import time
+import sys
 
 # Load credentials and tokens
-creds = pd.read_csv('credentials/credentials.csv').set_index('key').transpose()
+creds = pd.read_csv('credentials/credentials.csv')
+bot_token = creds[creds.key=='bot_token'].value.values[0]
+bungie_api_token = creds[creds.key=='bungie_api'].value.values[0]
 google_keys_file = 'credentials/google_keys.json'
+
+client = discord.Client()
 
 # Google Sheets
 
@@ -69,7 +74,7 @@ def get_bungie_data(clan_id):
     call = "/GroupV2/" + str(clan_id) + "/Members/"
     
     # Get the data from the API
-    response = requests.get(bungie_api + call, headers =  { 'X-API-Key' : creds.bungie_api })
+    response = requests.get(bungie_api + call, headers =  { 'X-API-Key' : bungie_api_token })
     
     # Convert the JSON response to a Pandas dataframe and extract results
     df = pd.read_json(response.text)
@@ -104,12 +109,12 @@ def get_destiny_name(member_df, bungie_name, bungie_clan):
         return m.member.iloc[0]
     return None
 
-# Get SGC Server
-client = discord.Client()
-server = client.get_guild(100291727209807872)
-
 # Update sheets
 async def update_sheets():
+    global client
+    print(client.user.name)
+    server = client.get_guild(100291727209807872)
+    print(server.name)
     # Get the clan list
     clan_list = get_clan_list()
     # Get a dataframe with the discord names - it's just one Discord server, set them all as Inactive now
@@ -192,6 +197,16 @@ async def update_sheets():
     print('Clan weekly activity sheet complete.')
     await server.get_channel(594568388869881856).send("SGC weekly activity sheets completed!")
 
-# Run command
-await update_sheets()
+@client.event
+async def on_ready():
+    print('Logged in as')
+    print(client.user.name)
+    print(client.user.id)
+    print('------')
+    await update_sheets()
+    print('Sheets updated!')
     
+print('Attempting to log in with token: {}'.format(bot_token))
+client.run(bot_token)
+if client.user is None:
+    sys.exit('Couldn\'t log in.')
