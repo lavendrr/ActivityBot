@@ -115,6 +115,7 @@ async def update_sheets():
     print(client.user.name)
     server = client.get_guild(100291727209807872)
     print(server.name)
+    await server.get_channel(594568388869881856).send('Starting sheet updates at {}...'.format(datetime.now(pytz.timezone('US/Central')).strftime('%Y %m %d %H:%M:%S %Z')))
     # Get the clan list
     clan_list = get_clan_list()
     # Get a dataframe with the discord names - it's just one Discord server, set them all as Inactive now
@@ -195,7 +196,7 @@ async def update_sheets():
         clan_data = clan_data[['member','destinyDisplayName','memberType','game_active','discord_active']]
         upload_clan('[NONE]',clan_data, 'PC')
     print('Clan weekly activity sheet complete.')
-    await server.get_channel(594568388869881856).send("SGC weekly activity sheets completed!")
+    await server.get_channel(594568388869881856).send("Sheet updates completed at {}!".format(datetime.now(pytz.timezone('US/Central')).strftime('%Y %m %d %H:%M:%S %Z')))
 
 @client.event
 async def on_ready():
