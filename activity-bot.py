@@ -59,27 +59,35 @@ def get_multiple_channels(msg):
     return channel_list
 
 # ACTIVITY LEADERBOARD
-# SYNTAX = !leaderboard [# mention of channel to be checked], [CHANNEL], [CHANNEL] | [CHANNEL TO POST LEADERBOARD MESSAGE IN]
+# SYNTAX = !leaderboard [# mention of channel to be checked] [#CHANNEL] [#CHANNEL] | [#CHANNEL TO POST LEADERBOARD MESSAGE IN]
 async def update_leaderboard(message):
     channel_list = get_multiple_channels(message)
+    lb_channel = channel_list[-1]
     right_now = pytz.utc.localize(datetime.utcnow()).astimezone(pytz.timezone('US/Central'))
-    # Time since Tuesday (Noon CST - Destiny 2 Reset)
+    # Time since Tuesday (Noon CST - Destiny 2 Reset)  
+    # Tuesday Conditions      
+    if right_now.weekday() == 1:
+        if right_now.hour >= 12:
+            time_since_tues = timedelta(hours = right_now.hour - 12, minutes = right_now.minute, days = 0)
+        else:
+            time_since_tues = timedelta(hours = right_now.hour + 12, minutes = right_now.minute, days = 6)
     # Monday conditions
-    if right_now.weekday() == 0 and right_now.hour >= 12:
-        time_since_tues = timedelta(hours = right_now.hour - 12, minutes = right_now.minute, days = 6)
-    elif right_now.weekday() == 0 and right_now.hour < 12:
-        time_since_tues = timedelta(hours = right_now.hour + 12, minutes = right_now.minute, days = 5)
+    elif right_now.weekday() == 0:
+        if right_now.hour >= 12:
+            time_since_tues = timedelta(hours = right_now.hour - 12, minutes = right_now.minute, days = 6)
+        else:
+            time_since_tues = timedelta(hours = right_now.hour + 12, minutes = right_now.minute, days = 5)
     # Other weekday conditions
-    elif right_now.hour >= 12:
-        time_since_tues = timedelta(hours = right_now.hour - 12, minutes = right_now.minute, days = (right_now.weekday() - 1))
-    elif right_now.hour < 12:
-        time_since_tues = timedelta(hours = right_now.hour + 12, minutes = right_now.minute, days = (right_now.weekday() - 2))
+    else:
+        if right_now.hour >= 12:
+            time_since_tues = timedelta(hours = right_now.hour - 12, minutes = right_now.minute, days = right_now.weekday() - 1)
+        else:
+            time_since_tues = timedelta(hours = right_now.hour + 12, minutes = right_now.minute, days = right_now.weekday() - 2)
     # Start check
     if channel_list != []:
         try:
             activity_cutoff = datetime.now() - time_since_tues
             leaderboard = {}
-            lb_channel = channel_list[len(channel_list) - 1]
             for a in channel_list[:len(channel_list) - 1]:
                 history = await a.history(limit = 10000, after = activity_cutoff, oldest_first = False).flatten()
                 for m in history:
@@ -87,9 +95,8 @@ async def update_leaderboard(message):
                         leaderboard[m.author.display_name] += 1
                     else:
                         leaderboard[m.author.display_name] = 1
-            msg = None
             lb_sorted = {}
-            lb_string = '__**Shrouded VII Discord Activity Leaderboard**__\n\n'
+            lb_string = '__**Shrouded Gaming Activity Leaderboard**__\n\n'
             count = 0
             for key, value in sorted(leaderboard.items(), key=lambda item: item[1], reverse = True):
                 if count < 10:
@@ -99,23 +106,29 @@ async def update_leaderboard(message):
                     break
             for item, amount in lb_sorted.items():
                 lb_string += ("{} - {} messages\n".format(item, amount))
-            lb_string += ('\nUpdated ' + right_now.strftime('%H:%M %p %Z on %A, %B %d.'))
-            async for m in lb_channel.history(limit = 2):
-                if m.author == client.user:
+            lb_string += ('\nGenerated from these channels: ')
+            for a in channel_list[:len(channel_list) - 1]:
+                lb_string += (a.mention + ' ')
+            lb_string += ('\n\nUpdated ' + right_now.strftime('%H:%M %p %Z on %A, %B %d.'))
+            '''# Auto-update
+            await lb_msg.edit(content = lb_string)'''
+            msg = None
+            async for m in lb_channel.history(limit = 10000):
+                if m.content.startswith('__**Shrouded Gaming Activity Leaderboard**__') and m.author == client.user:
                     msg = m
                     break
             if msg == None:
                 await lb_channel.send(lb_string)
-                time.sleep(1)
                 await lb_channel.last_message.pin()
-                time.sleep(1)
-                await lb_channel.last_message.delete()
+                await message.channel.send('Leaderboard created!')
             else:
                 await msg.edit(content = lb_string)
+                await message.channel.send('Leaderboard updated!')
         except:
-            await message.channel.send('The bot does not have access to that channel.')
+            pass
     else:
         await message.channel.send('That channel does not exist.')
+        
 # Start the BOT!
 
 client = discord.Client()
@@ -168,7 +181,7 @@ def get_bungie_data(clan_id):
     call = "/GroupV2/" + str(clan_id) + "/Members/"
     
     # Get the data from the API
-    response = requests.get(bungie_api + call, headers =  { 'X-API-Key' : creds.bungie_api })
+    response = requests.get(bungie_api + call, headers =  { 'X-API-Key' : creds.bungie_api[0] })
     
     # Convert the JSON response to a Pandas dataframe and extract results
     df = pd.read_json(response.text)
@@ -449,7 +462,6 @@ async def on_message(message):
     if message.content.startswith('!leaderboard'):
         await update_leaderboard(message)
     ### MEME COMMANDS
-    """
     if message.content.startswith('!hoesmad'):
         x = 0
         while x < 3:
@@ -461,7 +473,7 @@ async def on_message(message):
         await message.channel.send('bruh moment')
     if message.content.startswith('!vii'):
         await message.channel.send('VII best clan')
-    """
+        
 @client.event
 async def on_ready():
     print('Logged in as')
@@ -469,5 +481,5 @@ async def on_ready():
     print(client.user.id)
     print('------')
 
-client.run(creds.bot_token)
+client.run(creds.bot_token[0])
 

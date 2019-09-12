@@ -13,3 +13,4 @@ circleci/
 # Don't upload Spyder project
 .spyproject
 .spyderproject
+.spyproject/workspace.ini
