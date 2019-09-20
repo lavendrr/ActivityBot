@@ -49,10 +49,10 @@ def get_char_id(m_type, d2_id):
     call = "/Destiny2/" + m_type + "/Profile/" + d2_id + "/?components=200"
     # Get the data from the API
     response = requests.get(bungie_api + call, headers =  { 'X-API-Key' : creds.bungie_api.value })
-    #df = pd.read_json(response.text)
+    df = pd.read_json(response.text)
     #results = df.loc['results','Response']
-    results = response.json()
-    return results
+    #results = response.json()
+    return df
 
 def get_char(m_type, d2_id, char_id):
     bungie_api = "https://www.bungie.net/Platform"
@@ -64,13 +64,43 @@ def get_char(m_type, d2_id, char_id):
     return results
 
 def get_milestone(ms_hash):
+    bungie_api = "http://www.bungie.net/Platform/"
+    call = "/Destiny2/Manifest/" + 'DestinyMilestoneDefinition/' + str(ms_hash) + '/?definitions=True'
+    # Get the data from the API
+    response = requests.get(bungie_api + call, headers =  { 'X-API-Key' : creds.bungie_api.value })
+    #results = response.json()
+    df = pd.read_json(response.text)
+    #results = df.loc['results','Response']
+    return df
+
+def get_activity(activity_hash):
+    bungie_api = "http://www.bungie.net/Platform/"
+    call = "/Destiny2/Manifest/" + 'DestinyActivityDefinition/' + str(activity_hash) + '/?definitions=True'
+    # Get the data from the API
+    response = requests.get(bungie_api + call, headers =  { 'X-API-Key' : creds.bungie_api.value })
+    #results = response.json()
+    df = pd.read_json(response.text)
+    #results = df.loc['results','Response']
+    return df
+
+def get_clan_rewards(clan_id):
     bungie_api = "https://www.bungie.net/Platform"
-    call = "/Destiny2/Milestones/" + ms_hash + "/Content/"
-    #call = "/User/GetBungieNetUserById/" + clan_id + "/"
+    call = "/Destiny2/Clan/" + clan_id + "/WeeklyRewardState/"
     # Get the data from the API
     response = requests.get(bungie_api + call, headers =  { 'X-API-Key' : creds.bungie_api.value })
     results = response.json()
     return results
+
+''' Test code
+vii = get_clan_members('3007121')
+lvmars = get_char_id('4','4611686018467267066')
+warlock = get_char('4','4611686018467267066','2305843009300469593')
+# CoS Data
+ms_hash = 2590427074
+activity_hash = 3333172150
+'''
+
+
 
 '''
     # Now extract the goodies!
