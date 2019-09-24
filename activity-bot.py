@@ -247,8 +247,6 @@ async def on_message(message):
             await message.channel.send(member.name + ' is currently playing '+ game_name + '.')
         else:
             await message.channel.send("Please enter a member's name.")
-    if message.content.startswith('!emotes'):
-        await message.channel.send(message.author.guild.emojis)
     if message.content.startswith('!memberactivity'):
         member = get_member(message)
         if member != None:
@@ -473,7 +471,16 @@ async def on_message(message):
         await message.channel.send('bruh moment')
     if message.content.startswith('!vii'):
         await message.channel.send('VII best clan')
-        
+    if message.content.startswith('!gn'):
+        msg = None
+        for a in message.author.guild.emojis:
+            if a.name == 'PeepoBlanket':
+                msg = message.author.mention + ' says goodnight! {}'.format(a)
+        if msg != None:
+            await message.channel.send(msg)
+        else:
+            await message.channel.send(message.author.mention + ' says goodnight! {}'.format(':PeepoBlanket:'))
+
 @client.event
 async def on_ready():
     print('Logged in as')
