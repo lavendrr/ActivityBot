@@ -14,6 +14,7 @@ import requests
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import time
+from pandas.io.json import json_normalize
 
 # Load credentials and tokens
 creds = pd.read_csv('credentials/credentials.csv').set_index('key').transpose()
@@ -44,15 +45,29 @@ def get_clan_members(clan_id):
     #results = response.json()
     return results
 
+def get_clan_members_awesome_version(clan_id):
+    # Get the data!
+    bungie_api = "https://www.bungie.net/Platform"
+    call = "/GroupV2/" + str(clan_id) + "/Members/"
+    #call = "/User/GetBungieNetUserById/" + clan_id + "/"
+    # Get the data from the API
+    response = requests.get(bungie_api + call, headers =  { 'X-API-Key' : creds.bungie_api.value })
+    
+    # Convert the JSON response to a FLATTENED Pandas dataframe and extract results
+    df = pd.read_json(response.text)
+    results = json_normalize(df.loc['results','Response'])
+    return results
+
 def get_char_id(m_type, d2_id):
     bungie_api = "https://www.bungie.net/Platform"
     call = "/Destiny2/" + m_type + "/Profile/" + d2_id + "/?components=200"
     # Get the data from the API
     response = requests.get(bungie_api + call, headers =  { 'X-API-Key' : creds.bungie_api.value })
     df = pd.read_json(response.text)
-    #results = df.loc['results','Response']
+    character_data = pd.DataFrame(df.loc['characters','Response']['data']).transpose()
+    chars = character_data[['characterId', 'classType']]
     #results = response.json()
-    return df
+    return chars
 
 def get_char(m_type, d2_id, char_id):
     bungie_api = "https://www.bungie.net/Platform"
@@ -60,7 +75,7 @@ def get_char(m_type, d2_id, char_id):
     #call = "/User/GetBungieNetUserById/" + clan_id + "/"
     # Get the data from the API
     response = requests.get(bungie_api + call, headers =  { 'X-API-Key' : creds.bungie_api.value })
-    results = response.json()
+    results = pd.DataFrame(response.json()['Response']['progressions']['data']['milestones']).transpose()
     return results
 
 def get_milestone(ms_hash):
@@ -99,8 +114,15 @@ warlock = get_char('4','4611686018467267066','2305843009300469593')
 ms_hash = 2590427074
 activity_hash = 3333172150
 '''
+vii = get_clan_members_awesome_version('3007121')
+vii = vii[['destinyUserInfo.membershipId','destinyUserInfo.displayName','destinyUserInfo.membershipType']]
+vii.columns = ['destinyId', 'name', 'mem_type']
 
+lvmars = get_char_id('4','4611686018467267066')
 
+char_activities = get_char('4','4611686018467267066','2305843009300469593')
+
+pd.DataFrame(char_activities.loc['2590427074']['activities'][0]['phases']).complete.all()
 
 '''
     # Now extract the goodies!
