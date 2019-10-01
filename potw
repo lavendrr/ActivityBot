@@ -122,7 +122,18 @@ lvmars = get_char_id('4','4611686018467267066')
 
 char_activities = get_char('4','4611686018467267066','2305843009300469593')
 
-pd.DataFrame(char_activities.loc['2590427074']['activities'][0]['phases']).complete.all()
+cos = pd.DataFrame(char_activities.loc['2590427074']['activities'][0]['phases']).complete.all()
+levi = pd.DataFrame(char_activities.loc['3660836525']['activities'][0]['phases']).complete.all()
+eow = pd.DataFrame(char_activities.loc['2986584050']['activities'][0]['phases']).complete.all()
+sos = pd.DataFrame(char_activities.loc['2683538554']['activities'][0]['phases']).complete.all()
+lw = pd.DataFrame(char_activities.loc['3181387331']['activities'][0]['phases']).complete.all()
+sotp = pd.DataFrame(char_activities.loc['1342567285']['activities'][0]['phases']).complete.all()
+crucible = char_activities.loc['157823523']['activities'][0]['challenges'][0]['objective']['complete']
+strikes = char_activities.loc['1437935813']['activities'][0]['challenges'][0]['objective']['complete']
+gambit = char_activities.loc['3448738070']['activities'][0]['challenges'][0]['objective']['complete']
+gambit_prime = char_activities.loc['2010672046']['activities'][0]['challenges'][0]['objective']['complete']
+reckoning = char_activities.loc['601087286']['activities'][0]['challenges'][0]['objective']['complete']
+
 
 '''
     # Now extract the goodies!
