@@ -89,7 +89,7 @@ async def update_leaderboard(message):
             activity_cutoff = datetime.now() - time_since_tues
             leaderboard = {}
             for a in channel_list[:len(channel_list) - 1]:
-                history = await a.history(limit = 20000, after = activity_cutoff, oldest_first = False).flatten()
+                history = await a.history(limit = 25000, after = activity_cutoff, oldest_first = False).flatten()
                 for m in history:
                     if m.author.display_name in leaderboard:
                         leaderboard[m.author.display_name] += 1
@@ -113,7 +113,7 @@ async def update_leaderboard(message):
             '''# Auto-update
             await lb_msg.edit(content = lb_string)'''
             msg = None
-            async for m in lb_channel.history(limit = 20000):
+            async for m in lb_channel.history(limit = 25000):
                 if m.content.startswith('__**Shrouded Gaming Activity Leaderboard**__') and m.author == client.user:
                     msg = m
                     break
@@ -356,7 +356,7 @@ async def on_message(message):
         max_messages_found = 0
         for channel in listOfChannels:
             try:
-                history = await channel.history(limit = 20000, after = activity_cutoff, oldest_first = False).flatten()
+                history = await channel.history(limit = 25000, after = activity_cutoff, oldest_first = False).flatten()
                 print("Processing channel {} with {} messages in the past 14 days.".format(str(channel), len(history)))
                 if max_messages_found < len(history):
                     max_messages_found = len(history)
@@ -365,7 +365,7 @@ async def on_message(message):
             except:
                 pass
         # Let's now get the Bungie data
-        print("Completed. Max messages per channel at {}/10000".format(max_messages_found))
+        print("Completed. Max messages per channel at {}/25000".format(max_messages_found))
         print("Beginning Bungie data process")
         all_bungie_data = pd.DataFrame()
         for index,clan in clan_list.iterrows():
@@ -424,7 +424,7 @@ async def on_message(message):
             member_df = pd.DataFrame(member_list, columns = ['member', 'discord_active'])
             for channel in listOfChannels:
                 try:
-                    history = await channel.history(limit = 20000, after = activity_cutoff, oldest_first = False).flatten()
+                    history = await channel.history(limit = 25000, after = activity_cutoff, oldest_first = False).flatten()
                     print("Processing channel {} with {} messages in the past 14 days.".format(str(channel), len(history)))
                     for m in history:
                         member_df.loc[member_df.member == m.author.display_name,'discord_active'] = True
@@ -448,7 +448,7 @@ async def on_message(message):
         if channel != None:
             activity_cutoff = datetime.now() - timedelta(days=7)
             try:
-                history = await channel.history(limit = 20000, after = activity_cutoff, oldest_first = False).flatten()
+                history = await channel.history(limit = 25000, after = activity_cutoff, oldest_first = False).flatten()
                 if len(history) > 9999:
                     await message.channel.send('Channel {} has over 10,000 messages in the past 7 days.'.format(str(channel)))
                 else:

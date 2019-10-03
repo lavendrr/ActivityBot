@@ -143,7 +143,7 @@ async def update_sheets():
     max_messages_found = 0
     for channel in listOfChannels:
         try:
-            history = await channel.history(limit = 20000, after = activity_cutoff, oldest_first = False).flatten()
+            history = await channel.history(limit = 25000, after = activity_cutoff, oldest_first = False).flatten()
             print("Processing channel {} with {} messages in the past 14 days.".format(str(channel), len(history)))
             if max_messages_found < len(history):
                 max_messages_found = len(history)
@@ -152,7 +152,7 @@ async def update_sheets():
         except:
             pass
     # Let's now get the Bungie data
-    print("Completed. Max messages per channel at {}/10000".format(max_messages_found))
+    print("Completed. Max messages per channel at {}/25000".format(max_messages_found))
     print("Beginning Bungie data process")
     all_bungie_data = pd.DataFrame()
     for index,clan in clan_list.iterrows():
