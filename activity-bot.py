@@ -283,12 +283,18 @@ async def on_message(message):
         else:
             await message.channel.send(message.author.mention + ' says goodnight! {}'.format(':PeepoBlanket:'))
 
+run_once = False
+
 @client.event
 async def on_ready():
-    print('Logged in as')
-    print(client.user.name)
-    print(client.user.id)
-    print('------')
+    global run_once
+    if run_once == False:
+        run_once = True
+        print('Logged in as')
+        print(client.user.name)
+        print(client.user.id)
+        print('Time: {}'.format(datetime.now(pytz.timezone('US/Central')).strftime('%H:%M:%S %Z on %b %d, %Y')))
+        print('------')
 
 client.run(creds.bot_token[0])
 

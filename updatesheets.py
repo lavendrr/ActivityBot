@@ -217,18 +217,23 @@ async def update_sheets(run_mode, client):
     print('Sheet updates completed.')
     await log_channel.send("{} sheet updates completed at {}!".format(run_mode, datetime.now(pytz.timezone('US/Central')).strftime('%H:%M:%S %Z on %b %d, %Y')))
 
+run_once = False
+
 @client.event
 async def on_ready():
-    print('Logged in as')
-    print(client.user.name)
-    print(client.user.id)
-    print('Time: {}'.format(datetime.now(pytz.timezone('US/Central')).strftime('%H:%M:%S %Z on %b %d, %Y')))
-    print('------')
-    await update_sheets(run_mode)
-    print('------')
-    print('Logging out.')
-    print('Time: {}'.format(datetime.now(pytz.timezone('US/Central')).strftime('%H:%M:%S %Z on %b %d, %Y')))
-    sys.exit()
+    global run_once
+    if run_once == False:
+        run_once = True
+        print('Logged in as')
+        print(client.user.name)
+        print(client.user.id)
+        print('Time: {}'.format(datetime.now(pytz.timezone('US/Central')).strftime('%H:%M:%S %Z on %b %d, %Y')))
+        print('------')
+        await update_sheets(run_mode)
+        print('------')
+        print('Logging out.')
+        print('Time: {}'.format(datetime.now(pytz.timezone('US/Central')).strftime('%H:%M:%S %Z on %b %d, %Y')))
+        sys.exit()
 
 def main(argv):
     global run_mode, run_server
