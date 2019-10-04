@@ -14,7 +14,7 @@ import requests
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import time
-import updatesheets
+import updatesheets as us
 
 # Load credentials and tokens
 creds = pd.read_csv('credentials/credentials.csv').set_index('key').transpose()
@@ -137,6 +137,7 @@ client = discord.Client()
 ######################################################
 # Google Sheet Access
 
+'''
 def get_clan_list():
     scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
     creds = ServiceAccountCredentials.from_json_keyfile_name(google_keys_file, scope)
@@ -145,6 +146,7 @@ def get_clan_list():
     clan_data = keyfile_sheet.get_all_records()
     clan_df = pd.DataFrame(clan_data,columns = ['Name','Tag','ID','Platform','Key'])
     return clan_df
+'''
 
 def upload_clan(sh_title, clan_df, platform):
     df = clan_df.copy()
@@ -331,7 +333,7 @@ async def on_message(message):
     #### !ALLACTIVITY
     if message.content.startswith('!updatesheets'):
         # Get the clan list
-        clan_list = get_clan_list()
+        clan_list = us.get_clan_list()
         # Get a dataframe with the discord names - it's just one Discord server, set them all as Inactive now
         member_list = []
         for index,clan in clan_list.iterrows():

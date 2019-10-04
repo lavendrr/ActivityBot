@@ -122,7 +122,7 @@ def get_destiny_name(member_df, bungie_name, bungie_clan):
     return None
 
 # Update sheets
-async def update_sheets():
+async def update_sheets(run_mode):
     global client
     
     # Get the channel for the staff log 
@@ -219,14 +219,14 @@ async def update_sheets():
     print('Sheet updates completed.')
     await log_channel.send("{} sheet updates completed at {}!".format(run_mode, datetime.now(pytz.timezone('US/Central')).strftime('%H:%M:%S %Z on %b %d, %Y')))
 
-@client.eventg
+@client.event
 async def on_ready():
     print('Logged in as')
     print(client.user.name)
     print(client.user.id)
     print('Time: {}'.format(datetime.now(pytz.timezone('US/Central')).strftime('%H:%M:%S %Z on %b %d, %Y')))
     print('------')
-    await update_sheets()
+    await update_sheets(run_mode)
     print('------')
     print('Logging out.')
     print('Time: {}'.format(datetime.now(pytz.timezone('US/Central')).strftime('%H:%M:%S %Z on %b %d, %Y')))
