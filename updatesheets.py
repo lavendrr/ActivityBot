@@ -229,7 +229,7 @@ async def on_ready():
         print(client.user.id)
         print('Time: {}'.format(datetime.now(pytz.timezone('US/Central')).strftime('%H:%M:%S %Z on %b %d, %Y')))
         print('------')
-        await update_sheets(run_mode)
+        await update_sheets(run_mode,client)
         print('------')
         print('Logging out.')
         print('Time: {}'.format(datetime.now(pytz.timezone('US/Central')).strftime('%H:%M:%S %Z on %b %d, %Y')))
