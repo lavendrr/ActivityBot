@@ -122,9 +122,7 @@ def get_destiny_name(member_df, bungie_name, bungie_clan):
     return None
 
 # Update sheets
-async def update_sheets(run_mode):
-    global client
-    
+async def update_sheets(run_mode, client):
     # Get the channel for the staff log 
     log_channel = client.get_guild(STAFF_GUILD).get_channel(STAFF_CHANNEL)
     # Now get the guild to process

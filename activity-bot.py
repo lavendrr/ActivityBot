@@ -134,98 +134,6 @@ async def update_leaderboard(message):
 
 client = discord.Client()
 
-######################################################
-# Google Sheet Access
-
-'''
-def get_clan_list():
-    scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
-    creds = ServiceAccountCredentials.from_json_keyfile_name(google_keys_file, scope)
-    client = gspread.authorize(creds)
-    keyfile_sheet = client.open("SGC Clans Key File").worksheet('Key')
-    clan_data = keyfile_sheet.get_all_records()
-    clan_df = pd.DataFrame(clan_data,columns = ['Name','Tag','ID','Platform','Key'])
-    return clan_df
-'''
-
-def upload_clan(sh_title, clan_df, platform):
-    df = clan_df.copy()
-    df.sort_values(by=['memberType','discord_active','game_active','member'],ascending=[False,False,False,True],inplace=True)
-    scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
-    creds = ServiceAccountCredentials.from_json_keyfile_name(google_keys_file, scope)
-    client = gspread.authorize(creds)
-    sheet = client.open('SGC Activity ' + platform)
-    try:
-        worksheet = sheet.worksheet(sh_title)
-        sheet.del_worksheet(worksheet)
-    except:
-        pass
-    worksheet = sheet.add_worksheet(title=sh_title, rows= str(len(df) + 10), cols="10")
-    cell_list = worksheet.range('A1:E' + str(len(df)+1))
-    cell_list[0].value = 'Discord name'
-    cell_list[1].value = 'Destiny display name'
-    cell_list[2].value = 'Discord active'
-    cell_list[3].value = 'Game active'     
-    cell_list[4].value = 'Member type'
-    row_counter = 0
-    for index,m in df.iterrows():
-        cell_list[row_counter*5 + 5].value = m.member
-        cell_list[row_counter*5 + 6].value = m.destinyDisplayName
-        cell_list[row_counter*5 + 7].value = m.discord_active
-        cell_list[row_counter*5 + 8].value = m.game_active        
-        cell_list[row_counter*5 + 9].value = m.memberType
-        row_counter = row_counter + 1
-    result = worksheet.update_cells(cell_list)
-    return result
-
-def get_bungie_data(clan_id):
-    # Get the data!
-    bungie_api = "https://www.bungie.net/Platform"
-    call = "/GroupV2/" + str(clan_id) + "/Members/"
-    
-    # Get the data from the API
-    response = requests.get(bungie_api + call, headers =  { 'X-API-Key' : creds.bungie_api[0] })
-    
-    # Convert the JSON response to a Pandas dataframe and extract results
-    df = pd.read_json(response.text)
-    results = df.loc['results','Response']
-    
-    # Now extract the goodies!
-    clan = pd.DataFrame(results,columns = ['memberType','isOnline','lastOnlineStatusChange','groupId','destinyUserInfo',
-                                           'bungieNetUserInfo','joinDate'])
-    clan['destinyDisplayName'] = clan.apply(lambda x: x.destinyUserInfo['displayName'],axis=1)
- #   clan['destinyMembershipType'] = clan.apply(lambda x: x.destinyUserInfo['membershipType'],axis=1)
- #   clan['destinyMembershipId'] = clan.apply(lambda x: x.destinyUserInfo['membershipId'],axis=1)
- #   clan['bungieSupplementalDisplayName'] = clan.apply(lambda x: x.bungieNetUserInfo['supplementalDisplayName'],axis=1)
- #   clan['bungieIconPath'] = clan.apply(lambda x: x.bungieNetUserInfo['iconPath'],axis=1)
- #   clan['bungieMembershipType'] = clan.apply(lambda x: x.bungieNetUserInfo['membershipType'],axis=1)
- #   clan['bungieMembershipId'] = clan.apply(lambda x: x.bungieNetUserInfo['membershipId'],axis=1)
- #   clan['bungieDisplayName'] = clan.apply(lambda x: x.bungieNetUserInfo['displayName'],axis=1)
-    
-    # Convert naive datetime to date-aware
-    clan['lastOnline'] = pd.to_datetime(clan.lastOnlineStatusChange, unit = 's').dt.tz_localize('UTC')
-    
-    # Convert to US Central
-    clan['lastOnline'] = clan.lastOnline.dt.tz_convert('US/Central')
-    right_now = pytz.utc.localize(datetime.utcnow()).astimezone(pytz.timezone('US/Central'))
-    clan['game_active'] = ((right_now - clan.lastOnline).dt.days <= 10)
-    clan = clan[['destinyDisplayName','memberType','game_active']]
-    return clan
-
-def get_destiny_name(member_df, bungie_name, bungie_clan):
-    # Get the members with an exact match first
-    m = member_df[member_df.member == bungie_name]
-    if len(m)==0:
-        # No exact match, so try case insensitive
-        m = member_df[member_df.member.str.lower() == bungie_name.lower()]
-        if len(m) == 0:
-            # Still no match, try contains [but in same clan]
-            m = member_df[((member_df.member.str.lower().str.contains(bungie_name.lower())==True)
-                            & (member_df.discord_clan.str.lower() == bungie_clan.lower()))]
-    if len(m) > 0:
-        return m.member.iloc[0]
-    return None
-
 @client.event
 async def on_message(message):
     # we do not want the bot to reply to itself
@@ -332,128 +240,19 @@ async def on_message(message):
     ##############################
     #### !ALLACTIVITY
     if message.content.startswith('!updatesheets'):
-        # Get the clan list
-        clan_list = us.get_clan_list()
-        # Get a dataframe with the discord names - it's just one Discord server, set them all as Inactive now
-        member_list = []
-        for index,clan in clan_list.iterrows():
-            # The different clans are identified as roles
-            print("Getting members of clan {}".format(clan.Tag))
-            # Check to see if the tag is ok
-            listOfRoles = message.guild.roles
-            current_clan_tag = clan.Tag
-            for val in listOfRoles:
-                if clan.Tag == str(val)[0:len(clan.Tag)]:
-                    current_clan_tag = str(val)
-            if len(current_clan_tag) != len(clan.Tag):
-                print("Replaced {} with tag {}".format(clan.Tag,current_clan_tag))
-            discord_clan = discord.utils.get(message.guild.roles, name=current_clan_tag)
-            if (not discord_clan is None):
-                for member in discord_clan.members:
-                     member_data = { "discord_clan" : clan.Tag , "member" :  member.display_name, "discord_active" : False }
-                     member_list.append(member_data)
-        member_df = pd.DataFrame(member_list, columns = ['discord_clan', 'member', 'discord_active'])
-        # Now loop through the messages, marking people who have messaged as Active
-        activity_cutoff = datetime.now() - timedelta(days=14)
-        listOfChannels = message.guild.text_channels
-        max_messages_found = 0
-        for channel in listOfChannels:
-            try:
-                history = await channel.history(limit = 25000, after = activity_cutoff, oldest_first = False).flatten()
-                print("Processing channel {} with {} messages in the past 14 days.".format(str(channel), len(history)))
-                if max_messages_found < len(history):
-                    max_messages_found = len(history)
-                for m in history:
-                    member_df.loc[member_df.member == m.author.display_name,'discord_active'] = True
-            except:
-                pass
-        # Let's now get the Bungie data
-        print("Completed. Max messages per channel at {}/25000".format(max_messages_found))
-        print("Beginning Bungie data process")
-        all_bungie_data = pd.DataFrame()
-        for index,clan in clan_list.iterrows():
-            print("Getting members of clan {} with Bungie ID # {}".format(clan.Tag,clan.ID))
-            # Get Bungie info
-            bungie_info = get_bungie_data(clan.ID)
-            bungie_info['bungie_clan'] = clan.Tag
-            bungie_info['discordName'] = bungie_info.apply(lambda x: get_destiny_name(member_df,x.destinyDisplayName, clan.Tag),axis=1)
-            # Merge them
-            all_bungie_data = pd.concat([all_bungie_data,bungie_info],axis = 0, ignore_index = True, sort = False)        
-
-        # Save to a CSV for debugging
-        all_bungie_data.to_csv('bungie.csv')
-        member_df.to_csv('discord.csv')
-        
-        # Merge them
-        all_data = all_bungie_data.merge(member_df, how = 'outer', left_on='discordName', right_on='member',indicator=True)
-        
-        all_data['clan'] = all_data.apply(lambda x: x.discord_clan if not pd.isnull(x.discord_clan) else x.bungie_clan, axis=1)
-        
-        all_data.clan.fillna(value='[NONE]',axis=0,inplace=True)
-        all_data.member.fillna('',inplace=True)
-        all_data.destinyDisplayName.fillna('',inplace=True)
-        all_data.memberType.fillna(0,inplace=True)
-        all_data.discord_active.fillna(False,inplace=True)
-        all_data.game_active.fillna(False,inplace=True)
-        
-        # Save the CSV
-        all_data.reset_index(drop=True,inplace=True)
-        all_data.to_csv('activity.csv')
-
-        for index,clan in clan_list.iterrows():
-            clan_data = all_data[all_data.clan == clan.Tag]
-            clan_data = clan_data[['member','destinyDisplayName','memberType','game_active','discord_active']]
-            upload_clan(clan.Tag, clan_data, clan.Platform)
-            print("Uploaded clan {} to Google Sheets, sleeping for 10 secs...".format(clan.Tag))
-            time.sleep(10)
-            
-        if len(all_data[all_data.clan == '[NONE]'])>0:
-            clan_data = all_data[all_data.clan == '[NONE]']
-            clan_data = clan_data[['member','destinyDisplayName','memberType','game_active','discord_active']]
-            upload_clan('[NONE]',clan_data, 'PC')
-        print('Clan weekly activity sheet complete.')
-        await message.channel.send("SGC weekly activity sheets completed!")
-        
-    '''if message.content.startswith('!roleactivity'):
-        # Get the activity
-        activity_cutoff = datetime.now() - timedelta(days=14)
-        role = get_role(message)
-        if role != None:
-            member_list = []
-            listOfChannels = message.guild.text_channels
-            for member in role.members:
-                member_data = { "member" :  member.display_name, "discord_active" : False }
-                member_list.append(member_data)
-            member_df = pd.DataFrame(member_list, columns = ['member', 'discord_active'])
-            for channel in listOfChannels:
-                try:
-                    history = await channel.history(limit = 25000, after = activity_cutoff, oldest_first = False).flatten()
-                    print("Processing channel {} with {} messages in the past 14 days.".format(str(channel), len(history)))
-                    for m in history:
-                        member_df.loc[member_df.member == m.author.display_name,'discord_active'] = True
-                except:
-                    pass
-            # Now get Bungie info
-            bungie_info = get_bungie_data("3007121")
-            # Merge them
-            bungie_info.destinyDisplayName = bungie_info.destinyDisplayName.str.lower()
-            member_df.member = member_df.member.str.lower()
-            bungie_info['discordName'] = bungie_info.apply(lambda x: 
-                get_destiny_name(member_df,x.destinyDisplayName),axis=1)
-            all_data = bungie_info.merge(member_df, how = 'outer', left_on='discordName', right_on='member')
-            # Save the CSV
-            all_data.to_csv('activity-list.csv')
-            await message.channel.send('Done checking activity for ' + role.name + '.')
+        if message.content.split(' ')[1] == 'PC' or message.content.split(' ')[1] == 'CONSOLE':
+            run_mode = message.content.split(' ')[1]
+            await us.update_sheets(run_mode, client)
         else:
-            await message.channel.send("Please enter a valid role.")'''
+            await message.channel.send('Please enter a valid run mode: PC/CONSOLE')
     if message.content.startswith('!channelactivity'):
         channel = get_channel(message)
         if channel != None:
             activity_cutoff = datetime.now() - timedelta(days=7)
             try:
                 history = await channel.history(limit = 25000, after = activity_cutoff, oldest_first = False).flatten()
-                if len(history) > 9999:
-                    await message.channel.send('Channel {} has over 10,000 messages in the past 7 days.'.format(str(channel)))
+                if len(history) > 24999:
+                    await message.channel.send('Channel {} has over 25,000 messages in the past 7 days.'.format(str(channel)))
                 else:
                     await message.channel.send('Channel {} has {} messages in the past 7 days.'.format(str(channel), len(history)))
             except:
