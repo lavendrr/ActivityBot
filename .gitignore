@@ -14,3 +14,4 @@ circleci/
 .spyproject
 .spyderproject
 .spyproject/workspace.ini
+*.pyc

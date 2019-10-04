@@ -16,6 +16,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import time
 import sys
+import getopt
 
 # Load credentials and tokens
 creds = pd.read_csv('credentials/credentials.csv')
@@ -24,6 +25,16 @@ bungie_api_token = creds[creds.key=='bungie_api'].value.values[0]
 google_keys_file = 'credentials/google_keys.json'
 
 client = discord.Client()
+
+# Constants
+MAX_MESSAGES = 25000
+RUN_CHANNEL = 594568388869881856
+STAFF_GUILD = 601229332026753044
+STAFF_CHANNEL = 629511503296593930
+
+# Default is to run the code in PC mode
+run_mode = 'PC'
+run_server = 100291727209807872
 
 # Google Sheets
 
@@ -51,7 +62,7 @@ def upload_clan(sh_title, clan_df, platform):
     worksheet = sheet.add_worksheet(title=sh_title, rows= str(len(df) + 10), cols="10")
     cell_list = worksheet.range('A1:E' + str(len(df)+1))
     cell_list[0].value = 'Discord name'
-    cell_list[1].value = 'Destiny display name'
+    cell_list[1].value = 'Steam name'
     cell_list[2].value = 'Discord active'
     cell_list[3].value = 'Game active'     
     cell_list[4].value = 'Member type'
@@ -103,21 +114,29 @@ def get_destiny_name(member_df, bungie_name, bungie_clan):
         m = member_df[member_df.member.str.lower() == bungie_name.lower()]
         if len(m) == 0:
             # Still no match, try contains [but in same clan]
-            m = member_df[((member_df.member.str.lower().str.contains(bungie_name.lower())==True)
+            member_names = member_df.member.str.lower()
+            m = member_df[((member_names.str.contains(bungie_name.lower(),regex=False)==True)
                             & (member_df.discord_clan.str.lower() == bungie_clan.lower()))]
     if len(m) > 0:
         return m.member.iloc[0]
     return None
 
 # Update sheets
-async def update_sheets():
-    global client
-    server = client.get_guild(100291727209807872)
+async def update_sheets(run_mode, client):
+    # Get the channel for the staff log 
+    log_channel = client.get_guild(STAFF_GUILD).get_channel(STAFF_CHANNEL)
+    # Now get the guild to process
+    server = client.get_guild(run_server)
     print('Server: ' + server.name)
     print('Commencing sheet updates.')
-    await server.get_channel(594568388869881856).send('Starting sheet updates at {}...'.format(datetime.now(pytz.timezone('US/Central')).strftime('%H:%M:%S %Z on %b %d, %Y')))
+    await log_channel.send('Starting {} sheet updates at {}...'.format(run_mode, datetime.now(pytz.timezone('US/Central')).strftime('%H:%M:%S %Z on %b %d, %Y')))
     # Get the clan list
     clan_list = get_clan_list()
+    # Select the subset of clans to process (PC or CONSOLE)
+    if run_mode == 'PC':
+        clan_list = clan_list[clan_list['Platform']=='PC']
+    else:
+        clan_list = clan_list[clan_list['Platform']!='PC']
     # Get a dataframe with the discord names - it's just one Discord server, set them all as Inactive now
     member_list = []
     for index,clan in clan_list.iterrows():
@@ -143,7 +162,7 @@ async def update_sheets():
     max_messages_found = 0
     for channel in listOfChannels:
         try:
-            history = await channel.history(limit = 25000, after = activity_cutoff, oldest_first = False).flatten()
+            history = await channel.history(limit = MAX_MESSAGES, after = activity_cutoff, oldest_first = False).flatten()
             print("Processing channel {} with {} messages in the past 14 days.".format(str(channel), len(history)))
             if max_messages_found < len(history):
                 max_messages_found = len(history)
@@ -152,7 +171,7 @@ async def update_sheets():
         except:
             pass
     # Let's now get the Bungie data
-    print("Completed. Max messages per channel at {}/25000".format(max_messages_found))
+    print("Completed. Max messages per channel at {}/{}".format(max_messages_found, MAX_MESSAGES))
     print("Beginning Bungie data process")
     all_bungie_data = pd.DataFrame()
     for index,clan in clan_list.iterrows():
@@ -196,7 +215,7 @@ async def update_sheets():
         clan_data = clan_data[['member','destinyDisplayName','memberType','game_active','discord_active']]
         upload_clan('[NONE]',clan_data, 'PC')
     print('Sheet updates completed.')
-    await server.get_channel(594568388869881856).send("Sheet updates completed at {}!".format(datetime.now(pytz.timezone('US/Central')).strftime('%H:%M:%S %Z on %b %d, %Y')))
+    await log_channel.send("{} sheet updates completed at {}!".format(run_mode, datetime.now(pytz.timezone('US/Central')).strftime('%H:%M:%S %Z on %b %d, %Y')))
 
 @client.event
 async def on_ready():
@@ -205,13 +224,33 @@ async def on_ready():
     print(client.user.id)
     print('Time: {}'.format(datetime.now(pytz.timezone('US/Central')).strftime('%H:%M:%S %Z on %b %d, %Y')))
     print('------')
-    await update_sheets()
+    await update_sheets(run_mode)
     print('------')
     print('Logging out.')
     print('Time: {}'.format(datetime.now(pytz.timezone('US/Central')).strftime('%H:%M:%S %Z on %b %d, %Y')))
     sys.exit()
+
+def main(argv):
+    global run_mode, run_server
     
-print('Attempting to log in with token: {}'.format(bot_token))
-client.run(bot_token)
-if client.user is None:
-    sys.exit('Couldn\'t log in.')
+    try:
+        opts, args = getopt.getopt(argv,"r:",["run_mode="])
+    except getopt.GetoptError:
+        print('updatesheets.py -r <PC/CONSOLE>')
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt in ('-r','--run_mode'):
+            run_mode = arg
+    # Set the mode
+    print('Running in mode {}.'.format(run_mode))
+    run_server = 100291727209807872 if run_mode == 'PC' else 614125874958303242
+    
+    print('Attempting to log in with token: {}'.format(bot_token))
+    client.run(bot_token)
+    if client.user is None:
+        sys.exit('Couldn\'t log in.')
+        
+if __name__ == "__main__":
+    main(sys.argv[1:])
+
+        
