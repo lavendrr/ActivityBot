@@ -103,7 +103,8 @@ def get_destiny_name(member_df, bungie_name, bungie_clan):
         m = member_df[member_df.member.str.lower() == bungie_name.lower()]
         if len(m) == 0:
             # Still no match, try contains [but in same clan]
-            m = member_df[((member_df.member.str.lower().str.contains(bungie_name.lower())==True)
+            member_names = member_df.member.str.lower()
+            m = member_df[((member_names.str.contains(bungie_name.lower(),regex=False)==True)
                             & (member_df.discord_clan.str.lower() == bungie_clan.lower()))]
     if len(m) > 0:
         return m.member.iloc[0]
