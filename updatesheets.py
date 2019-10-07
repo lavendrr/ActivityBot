@@ -18,7 +18,6 @@ import time
 import sys
 import getopt
 from random import randrange
-from sleep import sleep
 
 # Load credentials and tokens
 creds = pd.read_csv('credentials/credentials.csv')
@@ -98,7 +97,7 @@ def get_bungie_data(clan_id):
             retries += 1
             if retries < 10:
                 sleep_for = 2 + randrange(0, min(300, 2**retries))
-                sleep(sleep_for)
+                time.sleep(sleep_for)
                 print('Error reading Bungie API data. Retrying... #{}'.format(retries))
             else:
                 print('Terminal error reading Bungie API data. {} sheets update failed.'.format(run_mode))
