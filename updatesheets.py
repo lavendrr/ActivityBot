@@ -17,6 +17,8 @@ from oauth2client.service_account import ServiceAccountCredentials
 import time
 import sys
 import getopt
+from random import randrange
+from sleep import sleep
 
 # Load credentials and tokens
 creds = pd.read_csv('credentials/credentials.csv')
@@ -84,12 +86,25 @@ def get_bungie_data(clan_id):
     bungie_api = "https://www.bungie.net/Platform"
     call = "/GroupV2/" + str(clan_id) + "/Members/"
     
-    # Get the data from the API
-    response = requests.get(bungie_api + call, headers =  { 'X-API-Key' : bungie_api_token })
-    
-    # Convert the JSON response to a Pandas dataframe and extract results
-    df = pd.read_json(response.text)
-    results = df.loc['results','Response']
+    data_ok = False
+    retries = 0
+    while not data_ok:
+        try:
+            # Get the data from the API
+            response = requests.get(bungie_api + call, headers =  { 'X-API-Key' : bungie_api_token })
+            # Convert the JSON response to a Pandas dataframe and extract results
+            df = pd.read_json(response.text)
+        except:
+            retries += 1
+            if retries < 10:
+                sleep_for = 2 + randrange(0, min(300, 2**retries))
+                sleep(sleep_for)
+            else:
+                print('Error reading Bungie API data')
+                sys.exit()
+        else:
+            data_ok = True
+            results = df.loc['results','Response']
     
     # Now extract the goodies!
     clan = pd.DataFrame(results,columns = ['memberType','isOnline','lastOnlineStatusChange','groupId','destinyUserInfo',
