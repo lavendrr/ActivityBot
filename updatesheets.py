@@ -82,10 +82,10 @@ def upload_clan(sh_title, clan_df, platform):
 # Bungie
 
 def get_bungie_data(clan_id):
+    log_channel = client.get_guild(STAFF_GUILD).get_channel(STAFF_CHANNEL)
     # Get the data!
     bungie_api = "https://www.bungie.net/Platform"
     call = "/GroupV2/" + str(clan_id) + "/Members/"
-    
     data_ok = False
     retries = 0
     while not data_ok:
@@ -99,8 +99,10 @@ def get_bungie_data(clan_id):
             if retries < 10:
                 sleep_for = 2 + randrange(0, min(300, 2**retries))
                 sleep(sleep_for)
+                print('Error reading Bungie API data. Retrying... #{}'.format(retries))
             else:
-                print('Error reading Bungie API data')
+                print('Terminal error reading Bungie API data. {} sheets update failed.'.format(run_mode))
+                log_channel.send('Terminal error reading Bungie API data. {} sheets update failed.'.format(run_mode))
                 sys.exit()
         else:
             data_ok = True
