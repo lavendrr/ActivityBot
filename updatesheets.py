@@ -139,6 +139,9 @@ def get_destiny_name(member_df, bungie_name, bungie_clan):
 
 # Update sheets
 async def update_sheets(run_mode, client):
+    # Set the mode
+    print('Running in mode {}.'.format(run_mode))
+    run_server = 100291727209807872 if run_mode == 'PC' else 614125874958303242
     # Get the channel for the staff log 
     log_channel = client.get_guild(STAFF_GUILD).get_channel(STAFF_CHANNEL)
     # Now get the guild to process
@@ -262,9 +265,6 @@ def main(argv):
     for opt, arg in opts:
         if opt in ('-r','--run_mode'):
             run_mode = arg
-    # Set the mode
-    print('Running in mode {}.'.format(run_mode))
-    run_server = 100291727209807872 if run_mode == 'PC' else 614125874958303242
     
     print('Attempting to log in with token: {}'.format(bot_token))
     client.run(bot_token)
