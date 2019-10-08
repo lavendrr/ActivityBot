@@ -10,11 +10,7 @@ import asyncio
 import discord
 from datetime import datetime, timedelta
 import pytz
-import requests
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-import time
-import updatesheets as us
+import us_toolkit as us
 
 # Load credentials and tokens
 creds = pd.read_csv('credentials/credentials.csv').set_index('key').transpose()
