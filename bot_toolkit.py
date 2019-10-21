@@ -14,8 +14,8 @@ import pytz
 
 # Load credentials and tokens
 creds = pd.read_csv('credentials/credentials.csv').set_index('key').transpose()
-bot_token = creds[creds.key=='bot_token'].value.values[0]
-bungie_api_token = creds[creds.key=='bungie_api'].value.values[0]
+bot_token = creds['bot_token'].loc['value']
+bungie_api_token = creds['bungie_api'].loc['value']
 google_keys_file = 'credentials/google_keys.json'
 
 ##############################

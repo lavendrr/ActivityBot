@@ -18,7 +18,6 @@ import sys
 from random import randrange
 
 # Load credentials and tokens
-creds = bot.creds
 bot_token = bot.bot_token
 bungie_api_token = bot.bungie_api_token
 google_keys_file = bot.google_keys_file
