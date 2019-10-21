@@ -5,7 +5,7 @@ Created on Mon Oct  7 23:18:57 2019
 
 @author: rmoctezuma
 """
-
+import bot_toolkit as bot
 import pandas as pd
 import discord
 from datetime import datetime, timedelta
@@ -18,10 +18,10 @@ import sys
 from random import randrange
 
 # Load credentials and tokens
-creds = pd.read_csv('credentials/credentials.csv')
-bot_token = creds[creds.key=='bot_token'].value.values[0]
-bungie_api_token = creds[creds.key=='bungie_api'].value.values[0]
-google_keys_file = 'credentials/google_keys.json'
+creds = bot.creds
+bot_token = bot.bot_token
+bungie_api_token = bot.bungie_api_token
+google_keys_file = bot.google_keys_file
 
 # Constants
 MAX_MESSAGES = 25000
