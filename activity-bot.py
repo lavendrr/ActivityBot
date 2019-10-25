@@ -46,6 +46,14 @@ async def on_message(message):
         await bot.update_leaderboard(client, message)
     if message.content.startswith('!test messagemembers'):
         await bot.dm_activity(client, message)
+    ### DEVELOPMENT
+    if message.content.startswith('!categories'):
+        await bot.get_categories(client, message)
+    if message.content.startswith('!channeltype'):
+        await message.channel.send(message.channel.type)
+    if message.content.startswith('!categoryactivity'):
+        await bot.category_activity(client, message)
+    ### END DEVELOPMENT
     ### MEME COMMANDS
     if message.content.startswith('!hoesmad'):
         x = 0

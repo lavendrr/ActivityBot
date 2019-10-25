@@ -49,6 +49,15 @@ def get_channel(msg):
         channel = None
     return channel
 
+def get_category(msg):
+    arg_pos = msg.content.find(' ')
+    if arg_pos > 0:
+        arg = msg.content[arg_pos + 1:]
+        channel = discord.utils.get(msg.guild.categories, name=arg)
+    else:
+        channel = None
+    return channel
+
 # MULTIPLE CHANNEL GET
 def get_multiple_channels(msg):
     a = msg.content.split(' | ')
@@ -205,11 +214,70 @@ async def channel_activity(client, message):
     else:
         await message.channel.send('That role does not exist.')
     
-##############################        
+##############################
 #       IN DEVELOPMENT       #
 ##############################
 
 ##############################
+
+## DISCORD CLAN OF THE WEEK
+        
+### Print categories and each channel within
+async def get_categories(client, message):
+    msg = ''
+    for a in message.guild.categories:
+        msg += '**' + a.name + '**' + '\n\t'
+        for b in a.channels:
+            if b.type == discord.ChannelType.text:
+                msg += ' ' + b.mention
+        msg += '\n'
+    await message.channel.send(msg)
+    
+async def category_activity(client, message):
+    results = []
+    activity_cutoff = datetime.now() - timedelta(days=7)
+    category = get_category(message)
+    #for category in message.guild.categories:
+    print("Category: {}".format(category.name))
+    ctg_dict = {}
+    ctg_dict[category.name] = []
+    for channel in category.channels:
+        if channel.type == discord.ChannelType.text:
+            chl_dict = {}
+            try:
+                history = await channel.history(limit = 25000, after = activity_cutoff, oldest_first = False).flatten()
+                if len(history) > 24999:
+                    chl_dict[channel.mention] = '>25,000'
+                else:
+                    chl_dict[channel.mention] = len(history)
+            except:
+                chl_dict[channel.mention] = 'Inaccessible.'
+            ctg_dict[category.name].append(chl_dict)
+    total = 0
+    for a in ctg_dict[category.name]:
+        for b in a.values():
+            if type(b) is int:
+                total += b
+            elif a == '>25,000':
+                total += 25000
+    ctg_dict[category.name].append({'Total Messages':total})
+    results.append(ctg_dict)
+    ### Discord data display
+    msg = ''
+    for category in results:
+        for name in category.keys():
+            msg += '**' + name + '**\n\t'
+        for a in category.values():
+            for b in a:
+                for key, value in b.items():
+                    if key != 'Total Messages':
+                        msg += (key + ' - ' + str(value) + '\n\t')
+                    else:
+                        msg += ('__' + key + ' - ' + str(value) + '__\n\t')
+        msg += '\n'
+    print(msg)
+    await message.channel.send(msg)
+        
 # !messagemembers
 async def dm_activity(client, message):
     role = get_role(message)
