@@ -226,7 +226,7 @@ async def channel_activity(client, message):
 async def get_categories(client, message):
     msg = ''
     for a in message.guild.categories:
-        msg += '**' + a.name + '**' + '\n\t'
+        msg += '**' + a.name + '**\n\t'
         for b in a.channels:
             if b.type == discord.ChannelType.text:
                 msg += ' ' + b.mention
@@ -236,32 +236,32 @@ async def get_categories(client, message):
 async def category_activity(client, message):
     results = []
     activity_cutoff = datetime.now() - timedelta(days=7)
-    category = get_category(message)
-    #for category in message.guild.categories:
-    print("Category: {}".format(category.name))
-    ctg_dict = {}
-    ctg_dict[category.name] = []
-    for channel in category.channels:
-        if channel.type == discord.ChannelType.text:
-            chl_dict = {}
-            try:
-                history = await channel.history(limit = 25000, after = activity_cutoff, oldest_first = False).flatten()
-                if len(history) > 24999:
-                    chl_dict[channel.mention] = '>25,000'
-                else:
-                    chl_dict[channel.mention] = len(history)
-            except:
-                chl_dict[channel.mention] = 'Inaccessible.'
-            ctg_dict[category.name].append(chl_dict)
-    total = 0
-    for a in ctg_dict[category.name]:
-        for b in a.values():
-            if type(b) is int:
-                total += b
-            elif a == '>25,000':
-                total += 25000
-    ctg_dict[category.name].append({'Total Messages':total})
-    results.append(ctg_dict)
+    #category = get_category(message)
+    for category in message.guild.categories:
+        print("Category: {}".format(category.name))
+        ctg_dict = {}
+        ctg_dict[category.name] = []
+        for channel in category.channels:
+            if channel.type == discord.ChannelType.text:
+                chl_dict = {}
+                try:
+                    history = await channel.history(limit = 25000, after = activity_cutoff, oldest_first = False).flatten()
+                    if len(history) > 24999:
+                        chl_dict[channel.mention] = '>25,000'
+                    else:
+                        chl_dict[channel.mention] = len(history)
+                except:
+                    chl_dict[channel.mention] = 'Inaccessible.'
+                ctg_dict[category.name].append(chl_dict)
+        total = 0
+        for a in ctg_dict[category.name]:
+            for b in a.values():
+                if type(b) is int:
+                    total += b
+                elif a == '>25,000':
+                    total += 25000
+        ctg_dict[category.name].append({'Total Messages':total})
+        results.append(ctg_dict)
     ### Discord data display
     msg = ''
     for category in results:
@@ -275,8 +275,19 @@ async def category_activity(client, message):
                     else:
                         msg += ('__' + key + ' - ' + str(value) + '__\n\t')
         msg += '\n'
-    print(msg)
-    await message.channel.send(msg)
+    # Print with segments
+    s_start = 0
+    s_end = min(1900, len(msg))
+    if s_end < len(msg):
+        while msg[s_end-1] != '\n':
+            s_end -= 1 
+    while(s_start < s_end):
+        await message.channel.send(msg[s_start:s_end])
+        s_start = s_end
+        s_end = min(s_start + 1900, len(msg))
+        if s_end < len(msg):
+            while msg[s_end-1] != '\n':
+                s_end -= 1
         
 # !messagemembers
 async def dm_activity(client, message):
