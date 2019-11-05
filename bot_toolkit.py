@@ -11,6 +11,8 @@ import asyncio
 import discord
 from datetime import datetime, timedelta
 import pytz
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
 # Load credentials and tokens
 creds = pd.read_csv('credentials/credentials.csv').set_index('key').transpose()
@@ -69,6 +71,21 @@ def get_multiple_channels(msg):
         channel_list.append(discord.utils.get(msg.guild.text_channels, mention = d))
     channel_list.append(discord.utils.get(msg.guild.text_channels, mention = c))
     return channel_list
+
+def dict_update(dictionary,sheet,sh_title):
+    df = pd.DataFrame.from_dict(dictionary,orient='index',columns=['value'])
+    try:
+        sheet.del_worksheet(sheet.worksheet(sh_title))
+    except:
+        pass
+    worksheet = sheet.add_worksheet(title=str(sh_title),rows=str(len(df)),cols='2')
+    cell_list = worksheet.range('A1:B' + str(len(df)))
+    row_counter = 0
+    for index,row in df.iterrows():
+        cell_list[row_counter].value = str(index)
+        cell_list[row_counter + 1].value = str(row['value'])
+        row_counter += 2
+    worksheet.update_cells(cell_list)
 
 ##############################        
 #          RELEASED          #
@@ -240,41 +257,47 @@ async def category_activity(client, message):
     for category in message.guild.categories:
         print("Category: {}".format(category.name))
         ctg_dict = {}
-        ctg_dict[category.name] = []
+        chl_dict = {}
         for channel in category.channels:
             if channel.type == discord.ChannelType.text:
-                chl_dict = {}
                 try:
                     history = await channel.history(limit = 25000, after = activity_cutoff, oldest_first = False).flatten()
                     if len(history) > 24999:
-                        chl_dict[channel.mention] = '>25,000'
+                        chl_dict[channel.name] = 25000
                     else:
-                        chl_dict[channel.mention] = len(history)
+                        chl_dict[channel.name] = len(history)
                 except:
-                    chl_dict[channel.mention] = 'Inaccessible.'
-                ctg_dict[category.name].append(chl_dict)
+                    chl_dict[channel.name] = 'Inaccessible.'
         total = 0
-        for a in ctg_dict[category.name]:
-            for b in a.values():
-                if type(b) is int:
-                    total += b
-                elif a == '>25,000':
-                    total += 25000
-        ctg_dict[category.name].append({'Total Messages':total})
+        for val in chl_dict.values():
+            if type(val) is int:
+                total += val
+        chl_dict['Total Messages'] = total
+        ctg_dict[category.name] = chl_dict
         results.append(ctg_dict)
+    
+    ### Google Sheets
+    scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
+    creds = ServiceAccountCredentials.from_json_keyfile_name(google_keys_file, scope)
+    client = gspread.authorize(creds)
+    sheet = client.open('DCotW')
+    
+    for category in results:
+        for cat_name in category.keys():
+            dict_update(category[cat_name],sheet,str(cat_name))
+
     ### Discord data display
     msg = ''
     for category in results:
         for name in category.keys():
             msg += '**' + name + '**\n\t'
-        for a in category.values():
-            for b in a:
-                for key, value in b.items():
-                    if key != 'Total Messages':
-                        msg += (key + ' - ' + str(value) + '\n\t')
-                    else:
-                        msg += ('__' + key + ' - ' + str(value) + '__\n\t')
+        for key, value in list(category.values())[0].items():
+            if key != 'Total Messages':
+                msg += (key + ' - ' + str(value) + '\n\t')
+            else:
+                msg += ('__' + key + ' - ' + str(value) + '__\n\t')
         msg += '\n'
+        
     # Print with segments
     s_start = 0
     s_end = min(1900, len(msg))
@@ -288,6 +311,8 @@ async def category_activity(client, message):
         if s_end < len(msg):
             while msg[s_end-1] != '\n':
                 s_end -= 1
+                
+    
         
 # !messagemembers
 async def dm_activity(client, message):
