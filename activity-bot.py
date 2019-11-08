@@ -9,7 +9,6 @@ import discord
 from datetime import datetime
 import pytz
 import bot_toolkit as bot
-import us_toolkit as us
 
 # Start the BOT!
 
@@ -20,40 +19,23 @@ async def on_message(message):
     # we do not want the bot to reply to itself
     if message.author == client.user:
         return
-    if message.content.startswith('!hello'):
-        await bot.hello(client, message)
-    if message.content.startswith('!gn'):
-        await bot.gn(client, message)
-    if message.content.startswith('!jointime'):
-        await bot.join_time(client, message)
-    if message.content.startswith('!game'):
-        await bot.game_activity(client, message)
-    if message.content.startswith('!memberactivity'):
-        await bot.member_activity(client, message)
-    if message.content.startswith('!listchannels'):
-        await bot.list_channels(client, message)
-    ##############################
+    # MAIN FUNCTIONS
     #### !SHEET UPDATES
     if message.content.startswith('!updatesheets'):
-        if message.content.split(' ')[1] == 'PC' or message.content.split(' ')[1] == 'CONSOLE':
-            run_mode = message.content.split(' ')[1]
-            await us.update_sheets(run_mode, client)
-        else:
-            await message.channel.send('Please enter a valid run mode: PC/CONSOLE')
+        await bot.update_sheets(client, message)
+    #### !DCotW UPDATES
+    if message.content.startswith('!update_dcotw'):
+        await bot.update_dcotw(client, message)
     if message.content.startswith('!channelactivity'):
         await bot.channel_activity(client, message)
     if message.content.startswith('!leaderboard'):
         await bot.update_leaderboard(client, message)
-    if message.content.startswith('!test messagemembers'):
-        await bot.dm_activity(client, message)
-    ### DEVELOPMENT
-    if message.content.startswith('!categories'):
-        await bot.get_categories(client, message)
-    if message.content.startswith('!channeltype'):
-        await message.channel.send(message.channel.type)
-    if message.content.startswith('!categoryactivity'):
-        await bot.category_activity(client, message)
-    ### END DEVELOPMENT
+
+    ### SOCIAL
+    if message.content.startswith('!hello'):
+        await bot.hello(client, message)
+    if message.content.startswith('!gn'):
+        await bot.gn(client, message)
     ### MEME COMMANDS
     if message.content.startswith('!hoesmad'):
         x = 0
@@ -65,7 +47,26 @@ async def on_message(message):
     if message.content.startswith('!bruh'):
         await message.channel.send('bruh moment')
     if message.content.startswith('!vii'):
-        await message.channel.send('VII best clan')
+        await message.channel.send('VII best clan') 
+    
+    ### MISCELLANEOUS
+    if message.content.startswith('!jointime'):
+        await bot.join_time(client, message)
+    if message.content.startswith('!game'):
+        await bot.game_activity(client, message)
+    if message.content.startswith('!memberactivity'):
+        await bot.member_activity(client, message)
+    if message.content.startswith('!listchannels'):
+        await bot.list_channels(client, message)
+    ### UNRELEASED/DEV
+    if message.content.startswith('!categories'):
+        await bot.get_categories(client, message)
+    if message.content.startswith('!channeltype'):
+        await message.channel.send(message.channel.type)
+    if message.content.startswith('!test messagemembers'):
+        await bot.dm_activity(client, message)
+    '''if message.content.startswith('!categoryactivity'):
+        await bot.category_activity(client, message)'''
 
 run_once = False
 

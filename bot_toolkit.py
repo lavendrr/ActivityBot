@@ -11,14 +11,15 @@ import asyncio
 import discord
 from datetime import datetime, timedelta
 import pytz
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
 
 # Load credentials and tokens
 creds = pd.read_csv('credentials/credentials.csv').set_index('key').transpose()
 bot_token = creds['bot_token'].loc['value']
 bungie_api_token = creds['bungie_api'].loc['value']
 google_keys_file = 'credentials/google_keys.json'
+
+import us_toolkit as us
+import dcotw_toolkit as dc
 
 ##############################
 #       BOT UTILITIES        #
@@ -60,7 +61,6 @@ def get_category(msg):
         channel = None
     return channel
 
-# MULTIPLE CHANNEL GET
 def get_multiple_channels(msg):
     a = msg.content.split(' | ')
     b = a[0].split(' ')
@@ -72,48 +72,8 @@ def get_multiple_channels(msg):
     channel_list.append(discord.utils.get(msg.guild.text_channels, mention = c))
     return channel_list
 
-def dict_update(dictionary,sheet,sh_title):
-    df = pd.DataFrame.from_dict(dictionary,orient='index',columns=['value'])
-    try:
-        sheet.del_worksheet(sheet.worksheet(sh_title))
-    except:
-        pass
-    worksheet = sheet.add_worksheet(title=str(sh_title),rows=str(len(df)),cols='2')
-    cell_list = worksheet.range('A1:B' + str(len(df)))
-    row_counter = 0
-    for index,row in df.iterrows():
-        cell_list[row_counter].value = str(index)
-        cell_list[row_counter + 1].value = str(row['value'])
-        row_counter += 2
-    worksheet.update_cells(cell_list)
-
-##############################        
-#          RELEASED          #
-##############################        
-
-# HELLO
-async def hello(client, message):
-    msg = 'Hello {0.author.mention}'.format(message)
-    await message.channel.send(msg)
-
-# GOOD NIGHT
-async def gn(client, message):
-    msg = None
-    for a in message.author.guild.emojis:
-        if a.name == 'PeepoBlanket':
-            msg = message.author.mention + ' says goodnight! {}'.format(a)
-    if msg != None:
-        await message.channel.send(msg)
-    else:
-        await message.channel.send(message.author.mention + ' says goodnight! {}'.format(':PeepoBlanket:'))
-
-# ACTIVITY LEADERBOARD
-# SYNTAX = !leaderboard [# mention of channel to be checked] [#CHANNEL] [#CHANNEL] | [#CHANNEL TO POST LEADERBOARD MESSAGE IN]
-async def update_leaderboard(client, message):
-    channel_list = get_multiple_channels(message)
-    lb_channel = channel_list[-1]
-    right_now = pytz.utc.localize(datetime.utcnow()).astimezone(pytz.timezone('US/Central'))
-    # Time since Tuesday (Noon CST - Destiny 2 Reset)  
+def time_since_tuesday(right_now):
+    # Time since Tuesday (Noon CDT/EST - Destiny 2 Reset)  
     # Tuesday Conditions      
     if right_now.weekday() == 1:
         if right_now.hour >= 12:
@@ -132,6 +92,82 @@ async def update_leaderboard(client, message):
             time_since_tues = timedelta(hours = right_now.hour - 12, minutes = right_now.minute, days = right_now.weekday() - 1)
         else:
             time_since_tues = timedelta(hours = right_now.hour + 12, minutes = right_now.minute, days = right_now.weekday() - 2)
+    return time_since_tues
+
+async def data_display(data,client,channel):
+    ### Discord data display
+    msg = ''
+    for category in data:
+        for name in category.keys():
+            msg += '**' + name + '**\n\t'
+        for key, value in list(category.values())[0].items():
+            if key != 'Total Messages':
+                msg += (key + ' - ' + str(value) + '\n\t')
+            else:
+                msg += ('__' + key + ' - ' + str(value) + '__\n\t')
+        msg += '\n'
+        
+    # Print with segments
+    s_start = 0
+    s_end = min(1900, len(msg))
+    if s_end < len(msg):
+        while msg[s_end-1] != '\n':
+            s_end -= 1 
+    while(s_start < s_end):
+        await channel.send(msg[s_start:s_end])
+        s_start = s_end
+        s_end = min(s_start + 1900, len(msg))
+        if s_end < len(msg):
+            while msg[s_end-1] != '\n':
+                s_end -= 1
+
+
+##############################        
+#          RELEASED          #
+##############################        
+
+##############################
+# MAIN FUNCTIONS
+
+## ACTIVITY SHEETS
+
+async def update_sheets(client, message):
+    if message.content.split(' ')[1] == 'PC' or message.content.split(' ')[1] == 'CONSOLE':
+        run_mode = message.content.split(' ')[1]
+        await us.update_sheets(run_mode, client)
+    else:
+        await message.channel.send('Please enter a valid run mode: PC/CONSOLE')
+
+## DISCORD CLAN OF THE WEEK
+        
+# Print categories and their respective text channels
+async def get_categories(client, message):
+    msg = ''
+    for a in message.guild.categories:
+        msg += '**' + a.name + '**\n\t'
+        for b in a.channels:
+            if b.type == discord.ChannelType.text:
+                msg += ' ' + b.mention
+        msg += '\n'
+    await message.channel.send(msg)
+
+# DCotW manual update
+async def update_dcotw(client, message):
+    if message.content.split(' ')[1] == 'PC' or message.content.split(' ')[1] == 'CONSOLE':
+        run_mode = message.content.split(' ')[1]
+        await data_display(dc.update_dcotw(run_mode,client),client,us.STAFF_CHANNEL)
+    else:
+        await message.channel.send('Please enter a valid run mode: PC/CONSOLE')
+
+## DISCORD LEADERBOARDS/ACTIVITY
+
+# Activity Leaderboard
+# SYNTAX = !leaderboard [# mention of channel to be checked] [#CHANNEL] [#CHANNEL] | [#CHANNEL TO POST LEADERBOARD MESSAGE IN]
+async def update_leaderboard(client, message):
+    channel_list = get_multiple_channels(message)
+    lb_channel = channel_list[-1]
+    right_now = pytz.utc.localize(datetime.utcnow()).astimezone(pytz.timezone('US/Eastern'))
+    time_since_tues = time_since_tuesday(right_now)
     # Start check
     if channel_list != []:
         try:
@@ -159,8 +195,6 @@ async def update_leaderboard(client, message):
             for a in channel_list[:len(channel_list) - 1]:
                 lb_string += (a.mention + ' ')
             lb_string += ('\n\nUpdated ' + right_now.strftime('%H:%M %p %Z on %A, %B %d.'))
-            '''# Auto-update
-            await lb_msg.edit(content = lb_string)'''
             msg = None
             async for m in lb_channel.history(limit = 25000):
                 if m.content.startswith('__**Shrouded Gaming Activity Leaderboard**__') and m.author == client.user:
@@ -178,6 +212,44 @@ async def update_leaderboard(client, message):
     else:
         await message.channel.send('That channel does not exist.')
         
+# Single-channel message count
+async def channel_activity(client, message):
+    channel = get_channel(message)
+    if channel != None:
+        activity_cutoff = datetime.now() - timedelta(days=7)
+        try:
+            history = await channel.history(limit = 25000, after = activity_cutoff, oldest_first = False).flatten()
+            if len(history) > 24999:
+                await message.channel.send('Channel {} has over 25,000 messages in the past 7 days.'.format(str(channel)))
+            else:
+                await message.channel.send('Channel {} has {} messages in the past 7 days.'.format(str(channel), len(history)))
+        except:
+            await message.channel.send('The bot does not have access to that channel.')
+    else:
+        await message.channel.send('That role does not exist.')
+
+##############################
+# SOCIAL
+
+# HELLO
+async def hello(client, message):
+    msg = 'Hello {0.author.mention}'.format(message)
+    await message.channel.send(msg)
+
+# GOOD NIGHT
+async def gn(client, message):
+    msg = None
+    for a in message.author.guild.emojis:
+        if a.name == 'PeepoBlanket':
+            msg = message.author.mention + ' says goodnight! {}'.format(a)
+    if msg != None:
+        await message.channel.send(msg)
+    else:
+        await message.channel.send(message.author.mention + ' says goodnight! {}'.format(':PeepoBlanket:'))
+
+##############################
+# MISCELLANEOUS
+
 async def join_time(client, message):
     member = get_member(message)
     if member != None:
@@ -215,21 +287,6 @@ async def list_channels(client, message):
     listOfChannels = message.guild.text_channels
     for val in listOfChannels:
         await message.channel.send(str(val) + ' ' + str(val.position))
-        
-async def channel_activity(client, message):
-    channel = get_channel(message)
-    if channel != None:
-        activity_cutoff = datetime.now() - timedelta(days=7)
-        try:
-            history = await channel.history(limit = 25000, after = activity_cutoff, oldest_first = False).flatten()
-            if len(history) > 24999:
-                await message.channel.send('Channel {} has over 25,000 messages in the past 7 days.'.format(str(channel)))
-            else:
-                await message.channel.send('Channel {} has {} messages in the past 7 days.'.format(str(channel), len(history)))
-        except:
-            await message.channel.send('The bot does not have access to that channel.')
-    else:
-        await message.channel.send('That role does not exist.')
     
 ##############################
 #       IN DEVELOPMENT       #
@@ -237,83 +294,6 @@ async def channel_activity(client, message):
 
 ##############################
 
-## DISCORD CLAN OF THE WEEK
-        
-### Print categories and each channel within
-async def get_categories(client, message):
-    msg = ''
-    for a in message.guild.categories:
-        msg += '**' + a.name + '**\n\t'
-        for b in a.channels:
-            if b.type == discord.ChannelType.text:
-                msg += ' ' + b.mention
-        msg += '\n'
-    await message.channel.send(msg)
-    
-async def category_activity(client, message):
-    results = []
-    activity_cutoff = datetime.now() - timedelta(days=7)
-    #category = get_category(message)
-    for category in message.guild.categories:
-        print("Category: {}".format(category.name))
-        ctg_dict = {}
-        chl_dict = {}
-        for channel in category.channels:
-            if channel.type == discord.ChannelType.text:
-                try:
-                    history = await channel.history(limit = 25000, after = activity_cutoff, oldest_first = False).flatten()
-                    if len(history) > 24999:
-                        chl_dict[channel.name] = 25000
-                    else:
-                        chl_dict[channel.name] = len(history)
-                except:
-                    chl_dict[channel.name] = 'Inaccessible.'
-        total = 0
-        for val in chl_dict.values():
-            if type(val) is int:
-                total += val
-        chl_dict['Total Messages'] = total
-        ctg_dict[category.name] = chl_dict
-        results.append(ctg_dict)
-    
-    ### Google Sheets
-    scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
-    creds = ServiceAccountCredentials.from_json_keyfile_name(google_keys_file, scope)
-    client = gspread.authorize(creds)
-    sheet = client.open('DCotW')
-    
-    for category in results:
-        for cat_name in category.keys():
-            dict_update(category[cat_name],sheet,str(cat_name))
-
-    ### Discord data display
-    msg = ''
-    for category in results:
-        for name in category.keys():
-            msg += '**' + name + '**\n\t'
-        for key, value in list(category.values())[0].items():
-            if key != 'Total Messages':
-                msg += (key + ' - ' + str(value) + '\n\t')
-            else:
-                msg += ('__' + key + ' - ' + str(value) + '__\n\t')
-        msg += '\n'
-        
-    # Print with segments
-    s_start = 0
-    s_end = min(1900, len(msg))
-    if s_end < len(msg):
-        while msg[s_end-1] != '\n':
-            s_end -= 1 
-    while(s_start < s_end):
-        await message.channel.send(msg[s_start:s_end])
-        s_start = s_end
-        s_end = min(s_start + 1900, len(msg))
-        if s_end < len(msg):
-            while msg[s_end-1] != '\n':
-                s_end -= 1
-                
-    
-        
 # !messagemembers
 async def dm_activity(client, message):
     role = get_role(message)
