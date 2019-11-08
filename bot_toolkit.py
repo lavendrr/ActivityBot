@@ -156,7 +156,7 @@ async def update_dcotw(client, message):
     if message.content.split(' ')[1] == 'PC' or message.content.split(' ')[1] == 'CONSOLE':
         run_mode = message.content.split(' ')[1]
         data = await dc.update_dcotw(run_mode,client)
-        await data_display(data,client,us.STAFF_CHANNEL)
+        await data_display(data,client,client.get_guild(us.STAFF_GUILD).get_channel(us.STAFF_CHANNEL))
     else:
         await message.channel.send('Please enter a valid run mode: PC/CONSOLE')
 
