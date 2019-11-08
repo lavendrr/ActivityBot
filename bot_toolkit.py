@@ -155,7 +155,8 @@ async def get_categories(client, message):
 async def update_dcotw(client, message):
     if message.content.split(' ')[1] == 'PC' or message.content.split(' ')[1] == 'CONSOLE':
         run_mode = message.content.split(' ')[1]
-        await data_display(dc.update_dcotw(run_mode,client),client,us.STAFF_CHANNEL)
+        data = await dc.update_dcotw(run_mode,client)
+        await data_display(data,client,us.STAFF_CHANNEL)
     else:
         await message.channel.send('Please enter a valid run mode: PC/CONSOLE')
 
