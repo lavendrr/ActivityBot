@@ -5,7 +5,6 @@ Created on Mon Oct  7 23:18:57 2019
 
 @author: rmoctezuma
 """
-import bot_toolkit as bot
 import pandas as pd
 import discord
 from datetime import datetime, timedelta
@@ -17,16 +16,17 @@ import time
 import sys
 from random import randrange
 
-# Load credentials and tokens
-bot_token = bot.bot_token
-bungie_api_token = bot.bungie_api_token
-google_keys_file = bot.google_keys_file
-
 # Constants
 MAX_MESSAGES = 25000
 RUN_CHANNEL = 594568388869881856
 STAFF_GUILD = 601229332026753044
 STAFF_CHANNEL = 629511503296593930
+
+# Load credentials and tokens
+import bot_toolkit as bot
+bot_token = bot.bot_token
+bungie_api_token = bot.bungie_api_token
+google_keys_file = bot.google_keys_file
 
 # Google Sheets
 

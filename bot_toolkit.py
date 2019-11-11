@@ -72,8 +72,8 @@ def get_multiple_channels(msg):
     channel_list.append(discord.utils.get(msg.guild.text_channels, mention = c))
     return channel_list
 
+# Time since Tuesday (Noon CDT/EST - Destiny 2 Reset)  
 def time_since_tuesday(right_now):
-    # Time since Tuesday (Noon CDT/EST - Destiny 2 Reset)  
     # Tuesday Conditions      
     if right_now.weekday() == 1:
         if right_now.hour >= 12:
@@ -94,19 +94,8 @@ def time_since_tuesday(right_now):
             time_since_tues = timedelta(hours = right_now.hour + 12, minutes = right_now.minute, days = right_now.weekday() - 2)
     return time_since_tues
 
-async def data_display(data,client,channel):
-    ### Discord data display
-    msg = ''
-    for category in data:
-        for name in category.keys():
-            msg += '**' + name + '**\n\t'
-        for key, value in list(category.values())[0].items():
-            if key != 'Total Messages':
-                msg += (key + ' - ' + str(value) + '\n\t')
-            else:
-                msg += ('__' + key + ' - ' + str(value) + '__\n\t')
-        msg += '\n'
-        
+# Discord data display for long messages (delimited by \n)
+async def data_display(msg,client,channel):
     # Print with segments
     s_start = 0
     s_end = min(1900, len(msg))
@@ -156,7 +145,17 @@ async def update_dcotw(client, message):
     if message.content.split(' ')[1] == 'PC' or message.content.split(' ')[1] == 'CONSOLE':
         run_mode = message.content.split(' ')[1]
         data = await dc.update_dcotw(run_mode,client)
-        await data_display(data,client,client.get_guild(us.STAFF_GUILD).get_channel(us.STAFF_CHANNEL))
+        msg = ''
+        for category in data:
+            for name in category.keys():
+                msg += '**' + name + '**\n\t'
+            for key, value in list(category.values())[0].items():
+                if key != 'Total Messages':
+                    msg += (key + ' - ' + str(value) + '\n\t')
+                else:
+                    msg += ('__' + key + ' - ' + str(value) + '__\n\t')
+            msg += '\n'
+        await data_display(msg,client,client.get_guild(us.STAFF_GUILD).get_channel(us.STAFF_CHANNEL))
     else:
         await message.channel.send('Please enter a valid run mode: PC/CONSOLE')
 
