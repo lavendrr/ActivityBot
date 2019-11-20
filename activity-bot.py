@@ -82,4 +82,3 @@ async def on_ready():
         print('------')
 
 client.run(bot.creds.bot_token[0])
-
