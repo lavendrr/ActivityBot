@@ -65,6 +65,7 @@ async def on_message(message):
     if message.content.startswith('!leaderboard create'):
         bot_member = discord.utils.get(message.guild.members, discriminator = client.user.discriminator)
         lb_dict = {}
+        time_out = 120.0
         
         def check(m):
             return any(m.content) and m.author == message.author and m.channel == message.channel
@@ -74,14 +75,14 @@ async def on_message(message):
 
         # Stage 1. Get the leaderboard title.
         try:
-            data = await client.wait_for('message', timeout=120.0, check=check)
+            data = await client.wait_for('message', timeout=time_out, check=check)
             lb_dict['Title'] = data.content
             text = 'The leaderboard will be titled {}.\n\nPlease #mention the channels you wish to generate the leaderboard from. Ensure the bot has permissions to view these channels.'.format(data.content)
             try:
                 await data.delete(delay=0.5)
                 await msg.edit(content = text)
             except discord.Forbidden:
-                await message.channel.send(content = text)
+                msg = await message.channel.send(content = text)
             next_stage = True
         except asyncio.TimeoutError:
             await msg.edit(content = 'You did not respond in time. Please try again.')
@@ -92,7 +93,7 @@ async def on_message(message):
         if next_stage == True:
             while repeat == True:
                 try:
-                    data = await client.wait_for('message', timeout=120.0, check=check)
+                    data = await client.wait_for('message', timeout=time_out, check=check)
                     has_perms = True
                     channel_list = []
                     mentions = ''
@@ -115,7 +116,7 @@ async def on_message(message):
                                 await data.delete(delay=0.5)
                                 await msg.edit(content = text)
                             except(discord.Forbidden, NameError):
-                                await message.channel.send(content = text)
+                                msg = await message.channel.send(content = text)
                             repeat = False
                             next_stage = True
                     else:
@@ -132,7 +133,7 @@ async def on_message(message):
             while repeat == True:
                 next_stage = False
                 try:
-                    data = await client.wait_for('message', timeout=120.0, check=check)
+                    data = await client.wait_for('message', timeout=time_out, check=check)
                     if len(data.channel_mentions) > 1:
                         await message.channel.send('Please only mention one channel. Please try again.')
                         multiple_tries = True
@@ -154,7 +155,7 @@ async def on_message(message):
                                 await data.delete(delay=0.5)
                                 await msg.edit(content = text)
                             except(discord.Forbidden, NameError):
-                                await message.channel.send(content = text)
+                                msg = await message.channel.send(content = text)
                             repeat = False
                             next_stage = True
                     else:
