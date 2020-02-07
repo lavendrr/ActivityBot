@@ -120,27 +120,27 @@ async def lb_create(client,message):
                 repeat = False
     
     if next_stage == True:
-        LB_CSV = pd.read_csv('test.csv',converters={'Channel Data': literal_eval}).set_index('Unnamed: 0')
+        lb_csv = pd.read_csv('leaderboards.csv',converters={'Channel Data': literal_eval}).set_index('Unnamed: 0')
         lb_dict['Message ID'] = 0
         lb_id = randrange(1000)
-        while lb_id in LB_CSV.index:
+        while lb_id in lb_csv.index:
             lb_id = randrange(1000)
-        LB_CSV.loc[lb_id] = lb_dict
-        LB_CSV.to_csv('test.csv')
-        print('Saved to csv')
-        await update_leaderboard(client,message,lb_id)
+        lb_csv.loc[lb_id] = lb_dict
+        lb_csv.to_csv('leaderboards.csv')
+        print('Saved leaderboard {} to csv.'.format(lb_id))
+        await update_leaderboard(client,lb_id)
     
-async def update_leaderboard(client,message,lb_id):
-    print('Starting lb process')
-    LB_CSV = pd.read_csv('test.csv',converters={'Channel Data': literal_eval}).set_index('Unnamed: 0')
+async def update_leaderboard(client,lb_id):
+    print('Starting lb process...')
+    lb_csv = pd.read_csv('leaderboards.csv',converters={'Channel Data': literal_eval}).set_index('Unnamed: 0')
     # Retrieving Discord objects from CSV data
     channel_list = []
-    for a in LB_CSV.at[lb_id,'Channel Data']:
-        channel_list.append(discord.utils.get(message.guild.text_channels, id = int(a)))
-    lb_channel = discord.utils.get(message.guild.text_channels, id = int(LB_CSV.at[lb_id,'Leaderboard Channel']))
-    if LB_CSV.at[lb_id,'Message ID'] != 0:
-        print('Fetching message with ID {} in channel with ID {}...'.format(int(LB_CSV.at[lb_id,'Message ID']),int(LB_CSV.at[lb_id,'Leaderboard Channel'])))
-        lb_message = await lb_channel.fetch_message(int(LB_CSV.at[lb_id,'Message ID']))
+    for a in lb_csv.at[lb_id,'Channel Data']:
+        channel_list.append(client.get_channel(int(a)))
+    lb_channel = client.get_channel(int(lb_csv.at[lb_id,'Leaderboard Channel']))
+    if lb_csv.at[lb_id,'Message ID'] != 0:
+        print('Fetching message with ID {} in channel with ID {}...'.format(int(lb_csv.at[lb_id,'Message ID']),int(lb_csv.at[lb_id,'Leaderboard Channel'])))
+        lb_message = await lb_channel.fetch_message(int(lb_csv.at[lb_id,'Message ID']))
     else:
         lb_message = None
         
@@ -160,7 +160,7 @@ async def update_leaderboard(client,message,lb_id):
                     else:
                         leaderboard[m.author.display_name] = 1
             lb_sorted = {}
-            lb_string = '__**' + str(LB_CSV.at[lb_id,'Title']) + '**__\n\n'
+            lb_string = '__**' + str(lb_csv.at[lb_id,'Title']) + '**__\n\n'
             count = 0
             for key, value in sorted(leaderboard.items(), key=lambda item: item[1], reverse = True):
                 if count < 10:
@@ -171,7 +171,7 @@ async def update_leaderboard(client,message,lb_id):
             for item, amount in lb_sorted.items():
                 lb_string += ('{} - {} messages\n'.format(item, amount))
             lb_string += ('\n*Generated from these channels:* ')
-            for a in channel_list[:len(channel_list) - 1]:
+            for a in channel_list:
                 lb_string += (a.mention + ' ')
             lb_string += ('\n\n*Updated ' + right_now.strftime('%H:%M %p %Z on %A, %B %d.*'))
             lb_string += ('\n\n*Leaderboard ID =* ' + str(lb_id))
@@ -179,32 +179,43 @@ async def update_leaderboard(client,message,lb_id):
                 await lb_message.edit(content = lb_string)
             else:
                 lb_message = await lb_channel.send(content = lb_string)
-                LB_CSV.loc[lb_id,'Message ID'] = lb_message.id
-                LB_CSV.to_csv('test.csv')
-            await message.channel.send('Leaderboard updated!')
+                lb_csv.loc[lb_id,'Message ID'] = lb_message.id
+                lb_csv.to_csv('leaderboards.csv')
+                print('Leaderboard with ID {} created.'.format(lb_id))
+            print('LB process complete.')
         except:
             pass
     else:
-        await message.channel.send('That channel does not exist.')
+        print('Channel list not found.')
 
-        # REFERENCE
-        '''
-        df2 = pd.read_csv('test.csv').set_index('Unnamed: 0')
-        csv_dict = df2.to_dict(orient='index')
-        message.channel.send(str(csv_dict))
-        
-        Dictionary to single-row DF
-        df = pd.DataFrame({k: [v] for k, v in test.items()})
-        
-        Save to CSV
-        df.to_csv('test.csv')
-        
-        Read DF back from CSV
-        df = pd.read_csv('test.csv',converters={'Channel Data': literal_eval}).set_index('Unnamed: 0')
-        
-        Dict from DF
-        dictionary = df.to_dict(orient='index')
-        
-        Access item from DF
-        df.at[index,column]
-        '''
+
+async def delete_leaderboard(client,lb_id):
+    lb_csv = pd.read_csv('leaderboards.csv',converters={'Channel Data': literal_eval}).set_index('Unnamed: 0')
+    lb_channel = client.get_channel(int(lb_csv.at[lb_id,'Leaderboard Channel']))
+    lb_message = await lb_channel.fetch_message(int(lb_csv.at[lb_id,'Message ID']))
+    await lb_message.delete()
+    lb_csv.drop(index=lb_id,inplace=True)
+    lb_csv.to_csv('leaderboards.csv')
+    print('Deleted leaderboard {}.'.format(lb_id))
+    
+# REFERENCE
+'''
+df2 = pd.read_csv('leaderboards.csv').set_index('Unnamed: 0')
+csv_dict = df2.to_dict(orient='index')
+message.channel.send(str(csv_dict))
+
+Dictionary to single-row DF
+df = pd.DataFrame({k: [v] for k, v in test.items()})
+
+Save to CSV
+df.to_csv('leaderboards.csv')
+
+Read DF back from CSV
+df = pd.read_csv('leaderboards.csv',converters={'Channel Data': literal_eval}).set_index('Unnamed: 0')
+
+Dict from DF
+dictionary = df.to_dict(orient='index')
+
+Access item from DF
+df.at[index,column]
+'''

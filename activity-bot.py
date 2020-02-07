@@ -69,9 +69,15 @@ async def on_message(message):
     #CREATE
     if message.content.startswith('!leaderboard create'):
         await lb.lb_create(client,message)
+        await message.channel.send('Leaderboard created!')
     if message.content.startswith('!leaderboard update'):
         lb_id = int(message.content.split('!leaderboard update ')[1])
-        await lb.update_leaderboard(client,message,lb_id)
+        await lb.update_leaderboard(client,lb_id)
+        await message.channel.send('Leaderboard {} updated!'.format(lb_id))
+    if message.content.startswith('!leaderboard delete'):
+        lb_id = int(message.content.split('!leaderboard delete ')[1])
+        await lb.delete_leaderboard(client,lb_id)
+        await message.channel.send('Leaderboard {} deleted!'.format(lb_id))
     if message.content.startswith('!categories'):
         await bot.get_categories(client, message)
     if message.content.startswith('!channeltype'):
