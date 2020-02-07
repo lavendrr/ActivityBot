@@ -12,6 +12,7 @@ import asyncio
 import pytz
 import bot_toolkit as bot
 import pandas as pd
+from datetime import datetime
 from random import randrange
 from ast import literal_eval
 
@@ -128,11 +129,6 @@ async def lb_create(client,message):
         LB_CSV.to_csv('test.csv')
         print('Saved to csv')
         await update_leaderboard(client,message,lb_id)
-        
-    ''' 
-    TO-DO
-    - store leaderboard message ID in CSV for updating/editing purposes
-    '''
     
 async def update_leaderboard(client,message,lb_id):
     print('Starting lb process')

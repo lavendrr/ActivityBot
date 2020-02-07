@@ -93,13 +93,13 @@ async def update_dcotw(run_mode,client):
     
     dict_update(ctg_totals,sheet,'Category Totals',True)
     print("Uploaded category totals to Google Sheets, sleeping 5 seconds...")
-    time.sleep(5)
+    time.sleep(10)
     
     for category in results:
         for cat_name in category.keys():
             dict_update(category[cat_name],sheet,str(cat_name),False)
             print("Uploaded category {} to Google Sheets, sleeping 5 seconds...".format(cat_name))
-            time.sleep(5)
+            time.sleep(10)
     
     print('DCotW updates completed.')
     await log_channel.send("{} DCotW updates completed at {}!".format(run_mode, datetime.now(pytz.timezone('US/Central')).strftime('%H:%M:%S %Z on %b %d, %Y')))
