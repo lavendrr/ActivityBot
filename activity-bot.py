@@ -7,14 +7,10 @@ Contributors: Roberto Moctezuma
 """
 
 import discord
-import asyncio
 from datetime import datetime
 import pytz
 import bot_toolkit as bot
 import lb_toolkit as lb
-import pandas as pd
-from random import randrange
-from ast import literal_eval
 
 # Start the BOT!
 
@@ -25,17 +21,30 @@ async def on_message(message):
     # we do not want the bot to reply to itself
     if message.author == client.user:
         return
-    # MAIN FUNCTIONS
-    #### !SHEET UPDATES
+    ### MAIN FUNCTIONS
+    
+    # !SHEET UPDATES
     if message.content.startswith('!updatesheets'):
         await bot.update_sheets(client, message)
-    #### !DCotW UPDATES
+        
+    # !DCotW UPDATES
     if message.content.startswith('!update_dcotw'):
         await bot.update_dcotw(client, message)
     if message.content.startswith('!channelactivity'):
-        await bot.channel_activity(client, message)
-#    if message.content.startswith('!leaderboard'):
-#        await bot.update_leaderboard(client, message)
+        await bot.channel_activity(client, message)  
+        
+    #LEADERBOARDS
+    if message.content.startswith('!leaderboard create'):
+        await lb.lb_create(client,message)
+        await message.channel.send('Leaderboard created!')
+    if message.content.startswith('!leaderboard update'):
+        lb_id = int(message.content.split('!leaderboard update ')[1])
+        await lb.update_leaderboard(client,lb_id)
+        await message.channel.send('Leaderboard {} updated!'.format(lb_id))
+    if message.content.startswith('!leaderboard delete'):
+        lb_id = int(message.content.split('!leaderboard delete ')[1])
+        await lb.delete_leaderboard(client,lb_id)
+        await message.channel.send('Leaderboard {} deleted!'.format(lb_id))
 
     ### SOCIAL
     if message.content.startswith('!hello'):
@@ -64,20 +73,8 @@ async def on_message(message):
         await bot.member_activity(client, message)
     if message.content.startswith('!listchannels'):
         await bot.list_channels(client, message)
+        
     ### UNRELEASED/DEV
-    
-    #CREATE
-    if message.content.startswith('!leaderboard create'):
-        await lb.lb_create(client,message)
-        await message.channel.send('Leaderboard created!')
-    if message.content.startswith('!leaderboard update'):
-        lb_id = int(message.content.split('!leaderboard update ')[1])
-        await lb.update_leaderboard(client,lb_id)
-        await message.channel.send('Leaderboard {} updated!'.format(lb_id))
-    if message.content.startswith('!leaderboard delete'):
-        lb_id = int(message.content.split('!leaderboard delete ')[1])
-        await lb.delete_leaderboard(client,lb_id)
-        await message.channel.send('Leaderboard {} deleted!'.format(lb_id))
     if message.content.startswith('!categories'):
         await bot.get_categories(client, message)
     if message.content.startswith('!channeltype'):
