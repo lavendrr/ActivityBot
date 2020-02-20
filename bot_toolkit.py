@@ -233,8 +233,11 @@ async def channel_activity(client, message):
 
 # HELLO
 async def hello(client, message):
-    msg = 'Hello {0.author.mention}'.format(message)
-    await message.channel.send(msg)
+    await message.channel.send('Hello {0.author.mention}'.format(message))
+
+# EGG
+async def egg(client, message):
+    await message.channel.send('🥚')
 
 # GOOD NIGHT
 async def gn(client, message):
@@ -246,6 +249,16 @@ async def gn(client, message):
         await message.channel.send(msg)
     else:
         await message.channel.send(message.author.mention + ' says goodnight! {}'.format(':PeepoBlanket:'))
+
+async def gm(client, message):
+    msg = None
+    for a in message.author.guild.emojis:
+        if a.name == 'PeepoBlanket':
+            msg = message.author.mention + ' says good morning! {}'.format(a)
+    if msg != None:
+        await message.channel.send(msg)
+    else:
+        await message.channel.send(message.author.mention + ' says good morning! {}'.format(':PeepoBlanket:'))
 
 ##############################
 # MISCELLANEOUS
