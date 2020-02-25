@@ -159,8 +159,13 @@ async def update_leaderboard(client,lb_id):
                         leaderboard[m.author.display_name] += 1
                     else:
                         leaderboard[m.author.display_name] = 1
+             
+            mention_list = ''
+            for a in channel_list:
+                mention_list += (a.mention + ' ')
+                
             lb_sorted = {}
-            lb_string = '__**' + str(lb_csv.at[lb_id,'Title']) + '**__\n\n'
+
             count = 0
             for key, value in sorted(leaderboard.items(), key=lambda item: item[1], reverse = True):
                 if count < 10:
@@ -168,17 +173,25 @@ async def update_leaderboard(client,lb_id):
                     count += 1
                 else:
                     break
+                
+            lb_string = ''
             for item, amount in lb_sorted.items():
                 lb_string += ('{} - {} messages\n'.format(item, amount))
-            lb_string += ('\n*Generated from these channels:* ')
-            for a in channel_list:
-                lb_string += (a.mention + ' ')
-            lb_string += ('\n\n*Updated ' + right_now.strftime('%H:%M %p %Z on %A, %B %d.*'))
-            lb_string += ('\n\n*Leaderboard ID =* ' + str(lb_id))
+            
+            embed = discord.Embed(title='__**{}**__'.format(str(lb_csv.at[lb_id,'Title'])), colour=discord.Colour(0xf58027), description=(lb_string), timestamp=pytz.utc.localize(datetime.utcnow()).astimezone(pytz.timezone('US/Eastern')))
+
+            embed.set_thumbnail(url='https://www.freepnglogos.com/uploads/discord-logo-png/discord-orange-icon-23.png')
+            embed.set_author(name='SGC Activity Bot', icon_url='https://cdn.discordapp.com/avatars/584837588645314563/0d5f7dd442ab9e35d049601b8eadd879.png?size=256')
+            embed.set_footer(text='Developed by Lavender', icon_url='https://cdn.discordapp.com/avatars/329382120344518656/a_0142df80cf5f4f4e08a60f61e0a6ddfd.gif?size=256&f=.gif')
+            
+            embed.add_field(name='ID', value=str(lb_id))
+            embed.add_field(name='Channels', value=mention_list)
+            
             if lb_message != None:
-                await lb_message.edit(content = lb_string)
+                await lb_message.edit(content = '', embed=embed)
             else:
-                lb_message = await lb_channel.send(content = lb_string)
+                lb_message = await lb_channel.send(content = '', embed = embed)
+
                 lb_csv.loc[lb_id,'Message ID'] = lb_message.id
                 lb_csv.to_csv('leaderboards.csv')
                 print('Leaderboard with ID {} created.'.format(lb_id))
@@ -187,7 +200,6 @@ async def update_leaderboard(client,lb_id):
             pass
     else:
         print('Channel list not found.')
-
 
 async def delete_leaderboard(client,lb_id):
     lb_csv = pd.read_csv('leaderboards.csv',converters={'Channel Data': literal_eval}).set_index('Unnamed: 0')
