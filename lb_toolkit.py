@@ -159,12 +159,13 @@ async def update_leaderboard(client,lb_id):
                         leaderboard[m.author.display_name] += 1
                     else:
                         leaderboard[m.author.display_name] = 1
-                        
+             
             mention_list = ''
             for a in channel_list:
                 mention_list += (a.mention + ' ')
                 
             lb_sorted = {}
+
             count = 0
             for key, value in sorted(leaderboard.items(), key=lambda item: item[1], reverse = True):
                 if count < 10:
@@ -190,6 +191,7 @@ async def update_leaderboard(client,lb_id):
                 await lb_message.edit(content = '', embed=embed)
             else:
                 lb_message = await lb_channel.send(content = '', embed = embed)
+
                 lb_csv.loc[lb_id,'Message ID'] = lb_message.id
                 lb_csv.to_csv('leaderboards.csv')
                 print('Leaderboard with ID {} created.'.format(lb_id))
@@ -198,7 +200,6 @@ async def update_leaderboard(client,lb_id):
             pass
     else:
         print('Channel list not found.')
-
 
 async def delete_leaderboard(client,lb_id):
     lb_csv = pd.read_csv('leaderboards.csv',converters={'Channel Data': literal_eval}).set_index('Unnamed: 0')

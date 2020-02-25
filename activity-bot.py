@@ -49,8 +49,12 @@ async def on_message(message):
     ### SOCIAL
     if message.content.startswith('!hello'):
         await bot.hello(client, message)
+    if message.content.startswith('!egg'):
+        await bot.egg(client, message)
     if message.content.startswith('!gn'):
         await bot.gn(client, message)
+    if message.content.startswith('!gm'):
+        await bot.gm(client, message)
     ### MEME COMMANDS
     if message.content.startswith('!hoesmad'):
         x = 0
