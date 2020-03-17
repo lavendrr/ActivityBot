@@ -79,6 +79,55 @@ async def on_message(message):
         await bot.list_channels(client, message)
         
     ### UNRELEASED/DEV
+    
+    HANGMANPICS = ['''
+___
+|     |
+|    O
+|   
+|    
+|
+=========''','''
+___
+|     |
+|    O
+|     | 
+|    
+|
+=========''','''
+___
+|     |
+|    O
+|   /| 
+|    
+|
+=========''','''
+___
+|     |
+|    O
+|   /|\\ 
+|    
+|
+=========''','''
+___
+|     |
+|    O
+|   /|\\ 
+|    /
+|
+=========''','''
+___
+|     |
+|    O
+|   /|\\ 
+|    /\\
+|
+=========''']
+    
+    if message.content.startswith('!hangman'):
+        for a in HANGMANPICS:
+            await message.channel.send(a)
+    
     if message.content.startswith('!categories'):
         await bot.get_categories(client, message)
     if message.content.startswith('!channeltype'):

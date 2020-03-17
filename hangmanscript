@@ -1,0 +1,127 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Feb 28 11:06:50 2020
+
+@author: rmoctezuma
+"""
+
+
+#word = 'The Huckleberry'
+
+import csv
+
+with open('destiny_guns.csv', newline='') as f:
+    reader = csv.reader(f)
+    data = list(reader)
+
+from random import randrange
+
+word = data[randrange(len(data))][0]
+
+HANGMANPICS = ['''
+___
+|     |
+|    O
+|   
+|    
+|
+=========''','''
+___
+|     |
+|    O
+|     | 
+|    
+|
+=========''','''
+___
+|     |
+|    O
+|   /| 
+|    
+|
+=========''','''
+___
+|     |
+|    O
+|   /|\\ 
+|    
+|
+=========''','''
+___
+|     |
+|    O
+|   /|\\ 
+|    /
+|
+=========''','''
+___
+|     |
+|    O
+|   /|\\ 
+|    /\\
+|
+=========''']
+
+letters = {}
+for index, char in enumerate(word.lower()):
+    if char not in letters:
+        letters[char] = {'count':1,'indices':[index]}
+    else:
+        letters[char]['count'] += 1
+        letters[char]['indices'].append(index)
+        
+guessed_letters = []
+        
+print(HANGMANPICS[0])
+
+s = ''
+for a in word:
+    if a != ' ':
+        s += '_'
+    else:
+        s += a
+print(s)
+
+solved = False
+fail_count = 0
+
+while solved == False and fail_count < 5:
+    if '_' not in s:
+        solved = True
+        break
+    guess = input('Input a character.\n').lower()
+    if len(guess) != 1:
+        print('Please only guess one character.\n')
+    else:
+        if guess in letters and guess not in guessed_letters:
+            for a in letters[guess]['indices']:
+                s2 = ''
+                for index, b in enumerate(s):
+                    if index != a:
+                        s2 += b
+                    else:
+                        s2 += word[index]
+                s = s2
+            print(s)
+        elif guess in guessed_letters:
+            print('This character has already been guessed. Try a new one.\n')
+        else:
+            fail_count += 1
+            print(HANGMANPICS[fail_count])
+            print(s)
+        guessed_letters.append(guess)
+            
+if solved == True:
+    print('Solved!')
+elif fail_count == 5:
+    print('Failed.')
+    print(word)
+    
+'''
+STATUS
+Functional!
+Add hints
+Some words have _ underscores in them, such as IKELOS_SR_v1.1.0.1
+The win condition needs to be changed to account for this.
+'''
