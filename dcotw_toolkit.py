@@ -49,7 +49,7 @@ async def update_dcotw(run_mode,client):
     
     # Set the mode
     print('Running in mode {}.'.format(run_mode))
-    run_server = 100291727209807872 if run_mode == 'PC' else 614125874958303242
+    run_server = 100291727209807872 if run_mode == 'PC' else 742246399697092618
     # Get the channel for the staff log 
     log_channel = client.get_guild(STAFF_GUILD).get_channel(STAFF_CHANNEL)
     # Now get the guild to process
