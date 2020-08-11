@@ -54,7 +54,7 @@ def upload_clan(sh_title, clan_df, platform):
     worksheet = sheet.add_worksheet(title=sh_title, rows= str(len(df) + 10), cols="10")
     cell_list = worksheet.range('A1:E' + str(len(df)+1))
     cell_list[0].value = 'Discord name'
-    cell_list[1].value = 'Steam name'
+    cell_list[1].value = 'Bungie name'
     cell_list[2].value = 'Discord active'
     cell_list[3].value = 'Game active'     
     cell_list[4].value = 'Member type'
