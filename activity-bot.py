@@ -77,6 +77,8 @@ async def on_message(message):
         await bot.member_activity(client, message)
     if message.content.startswith('!listchannels'):
         await bot.list_channels(client, message)
+    if message.content.startswith('!getavatar'):
+        await bot.get_avatar(client, message)
         
     ### UNRELEASED/DEV
     if message.content.startswith('!categories'):
@@ -85,8 +87,6 @@ async def on_message(message):
         await message.channel.send(message.channel.type)
     if message.content.startswith('!test messagemembers'):
         await bot.dm_activity(client, message)
-    '''if message.content.startswith('!categoryactivity'):
-        await bot.category_activity(client, message)'''
 
 run_once = False
 

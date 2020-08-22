@@ -182,7 +182,7 @@ async def update_leaderboard(client,lb_id):
 
             embed.set_thumbnail(url='https://www.freepnglogos.com/uploads/discord-logo-png/discord-orange-icon-23.png')
             embed.set_author(name='SGC Activity Bot', icon_url='https://cdn.discordapp.com/avatars/584837588645314563/0d5f7dd442ab9e35d049601b8eadd879.png?size=256')
-            embed.set_footer(text='Developed by Lavender', icon_url='https://cdn.discordapp.com/avatars/329382120344518656/a_0142df80cf5f4f4e08a60f61e0a6ddfd.gif?size=256&f=.gif')
+            embed.set_footer(text='Developed by Lavender', icon_url=client.get_user(329382120344518656).avatar_url)
             
             embed.add_field(name='ID', value=str(lb_id))
             embed.add_field(name='Channels', value=mention_list)

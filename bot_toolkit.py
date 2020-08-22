@@ -158,59 +158,6 @@ async def update_dcotw(client, message):
         await data_display(msg,client,client.get_guild(us.STAFF_GUILD).get_channel(us.STAFF_CHANNEL))
     else:
         await message.channel.send('Please enter a valid run mode: PC/CONSOLE')
-
-## DISCORD LEADERBOARDS/ACTIVITY
-
-# Activity Leaderboard
-# SYNTAX = !leaderboard [# mention of channel to be checked] [#CHANNEL] [#CHANNEL] | [#CHANNEL TO POST LEADERBOARD MESSAGE IN]
-async def update_leaderboard(client, message):
-    channel_list = get_multiple_channels(message)
-    lb_channel = channel_list[-1]
-    right_now = pytz.utc.localize(datetime.utcnow()).astimezone(pytz.timezone('US/Eastern'))
-    time_since_tues = time_since_tuesday(right_now)
-    # Start check
-    if channel_list != []:
-        try:
-            activity_cutoff = datetime.now() - time_since_tues
-            leaderboard = {}
-            for a in channel_list[:len(channel_list) - 1]:
-                history = await a.history(limit = 25000, after = activity_cutoff, oldest_first = False).flatten()
-                for m in history:
-                    if m.author.display_name in leaderboard:
-                        leaderboard[m.author.display_name] += 1
-                    else:
-                        leaderboard[m.author.display_name] = 1
-            lb_sorted = {}
-            lb_string = '__**Shrouded Gaming Activity Leaderboard**__\n\n'
-            count = 0
-            for key, value in sorted(leaderboard.items(), key=lambda item: item[1], reverse = True):
-                if count < 10:
-                    lb_sorted[key] = value
-                    count += 1
-                else:
-                    break
-            for item, amount in lb_sorted.items():
-                lb_string += ("{} - {} messages\n".format(item, amount))
-            lb_string += ('\nGenerated from these channels: ')
-            for a in channel_list[:len(channel_list) - 1]:
-                lb_string += (a.mention + ' ')
-            lb_string += ('\n\nUpdated ' + right_now.strftime('%H:%M %p %Z on %A, %B %d.'))
-            msg = None
-            async for m in lb_channel.history(limit = 25000):
-                if m.content.startswith('__**Shrouded Gaming Activity Leaderboard**__') and m.author == client.user:
-                    msg = m
-                    break
-            if msg == None:
-                await lb_channel.send(lb_string)
-                await lb_channel.last_message.pin()
-                await message.channel.send('Leaderboard created!')
-            else:
-                await msg.edit(content = lb_string)
-                await message.channel.send('Leaderboard updated!')
-        except:
-            pass
-    else:
-        await message.channel.send('That channel does not exist.')
         
 # Single-channel message count
 async def channel_activity(client, message):
@@ -300,6 +247,9 @@ async def list_channels(client, message):
     listOfChannels = message.guild.text_channels
     for val in listOfChannels:
         await message.channel.send(str(val) + ' ' + str(val.position))
+        
+async def get_avatar(client, message):
+    await message.channel.send(message.author.avatar_url)
     
 ##############################
 #       IN DEVELOPMENT       #
