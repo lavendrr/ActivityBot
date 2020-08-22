@@ -17,7 +17,7 @@ from random import randrange
 from ast import literal_eval
 
 async def lb_create(client,message):
-    bot_member = discord.utils.get(message.guild.members, discriminator = client.user.discriminator)
+    bot_member = discord.utils.get(message.guild.members, id = client.user.id)
     lb_dict = {}
     time_out = 120.0
     
