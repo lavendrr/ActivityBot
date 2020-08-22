@@ -39,6 +39,7 @@ async def on_message(message):
         await message.channel.send('Leaderboard created!')
     if message.content.startswith('!leaderboard update'):
         lb_id = int(message.content.split('!leaderboard update ')[1])
+        await message.channel.send('Updating leaderboard {}...'.format(lb_id))
         await lb.update_leaderboard(client,lb_id)
         await message.channel.send('Leaderboard {} updated!'.format(lb_id))
     if message.content.startswith('!leaderboard delete'):
