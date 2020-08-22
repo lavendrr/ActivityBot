@@ -181,7 +181,7 @@ async def update_leaderboard(client,lb_id):
             embed = discord.Embed(title='__**{}**__'.format(str(lb_csv.at[lb_id,'Title'])), colour=discord.Colour(0xf58027), description=(lb_string), timestamp=pytz.utc.localize(datetime.utcnow()).astimezone(pytz.timezone('US/Eastern')))
 
             embed.set_thumbnail(url='https://www.freepnglogos.com/uploads/discord-logo-png/discord-orange-icon-23.png')
-            embed.set_author(name='SGC Activity Bot', icon_url='https://cdn.discordapp.com/avatars/584837588645314563/0d5f7dd442ab9e35d049601b8eadd879.png?size=256')
+            embed.set_author(name='SGC Activity Bot', icon_url=client.user.avatar_url)
             embed.set_footer(text='Developed by Lavender', icon_url=client.get_user(329382120344518656).avatar_url)
             
             embed.add_field(name='ID', value=str(lb_id))
