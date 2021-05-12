@@ -14,8 +14,26 @@ import bot_toolkit as bot
 import lb_toolkit as lb
 import pandas as pd
 from ast import literal_eval
+import logging
 
-client = discord.Client()
+logger = logging.getLogger('discord')
+logger.setLevel(logging.INFO)
+
+handler = logging.FileHandler(filename='update_lb.log', encoding='utf-8', mode='w')
+handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
+
+consoleHandler = logging.StreamHandler()
+consoleHandler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
+
+logger.addHandler(handler)
+logger.addHandler(consoleHandler)
+
+# Start the bot
+
+intents = discord.Intents.default()
+intents.members = True
+
+client = discord.Client(intents=intents)
 
 run_once = False
 
