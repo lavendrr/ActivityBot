@@ -168,7 +168,7 @@ async def update_sheets(run_mode, client):
     member_df = pd.DataFrame(member_list, columns = ['discord_clan', 'member', 'discord_active'])
     # Now loop through the messages, marking people who have messaged as Active
     activity_cutoff = datetime.now() - timedelta(days=14)
-    listOfChannels = server.text_channels
+    listOfChannels = server.text_channels + server.threads
     max_messages_found = 0
     for channel in listOfChannels:
         try:
