@@ -159,7 +159,7 @@ async def update_leaderboard(client,lb_id):
                         leaderboard[m.author.display_name] += 1
                     else:
                         leaderboard[m.author.display_name] = 1
-             
+                
             mention_list = ''
             for a in channel_list:
                 mention_list += (a.mention + ' ')
@@ -181,8 +181,8 @@ async def update_leaderboard(client,lb_id):
             embed = discord.Embed(title='__**{}**__'.format(str(lb_csv.at[lb_id,'Title'])), colour=discord.Colour(0xf58027), description=(lb_string), timestamp=pytz.utc.localize(datetime.utcnow()).astimezone(pytz.timezone('US/Eastern')))
 
             embed.set_thumbnail(url='https://www.freepnglogos.com/uploads/discord-logo-png/discord-orange-icon-23.png')
-            embed.set_author(name='SGC Activity Bot', icon_url=client.user.avatar_url)
-            embed.set_footer(text='Developed by Lavender', icon_url=client.get_user(329382120344518656).avatar_url)
+            embed.set_author(name='SGC Activity Bot', icon_url=client.user.avatar)
+            embed.set_footer(text='Developed by Lavender', icon_url=client.get_user(329382120344518656).avatar)
             
             embed.add_field(name='ID', value=str(lb_id))
             embed.add_field(name='Channels', value=mention_list)
