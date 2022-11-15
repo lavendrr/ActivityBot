@@ -15,6 +15,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import bot_toolkit as bot
 import us_toolkit as us
+import asyncio
 
 # Credentials
 bot_token = bot.bot_token
@@ -68,14 +69,37 @@ async def update_dcotw(run_mode,client):
         chl_dict = {}
         for channel in category.channels:
             if channel.type == discord.ChannelType.text:
-                try:
-                    history = await channel.history(limit = 25000, after = activity_cutoff, oldest_first = False).flatten()
+                try: # Get text channel history
+                    #history = await channel.history(limit = 25000, after = activity_cutoff, oldest_first = False).flatten()
+                    history = [message async for message in channel.history(limit = 25000, after = activity_cutoff, oldest_first = False)]
+                    print(history)
                     if len(history) > 24999:
                         chl_dict[channel.name] = 25000
                     else:
                         chl_dict[channel.name] = len(history)
-                except:
+                except discord.Forbidden:
                     chl_dict[channel.name] = 'Inaccessible.'
+                for thread in channel.threads:
+                    try: #Get activity for any threads this text channel has
+                        #history = await thread.history(limit = 25000, after = activity_cutoff, oldest_first = False).flatten()
+                        history = [message async for message in thread.history(limit = 25000, after = activity_cutoff, oldest_first = False)]
+                        if len(history) > 24999:
+                            chl_dict[thread.name] = 25000
+                        else:
+                            chl_dict[thread.name] = len(history)
+                    except discord.Forbidden:
+                        chl_dict[thread.name] = 'Inaccessible.'
+            elif channel.type == discord.ChannelType.forum:
+                for thread in channel.threads: # Get activity for threads this forum has
+                    try:
+                        #history = await thread.history(limit = 25000, after = activity_cutoff, oldest_first = False).flatten()
+                        history = [message async for message in thread.history(limit = 25000, after = activity_cutoff, oldest_first = False)]
+                        if len(history) > 24999:
+                            chl_dict[thread.name] = 25000
+                        else:
+                            chl_dict[thread.name] = len(history)
+                    except discord.Forbidden:
+                        chl_dict[thread.name] = 'Inaccessible.'
         total = 0
         for val in chl_dict.values():
             if type(val) is int:
@@ -93,13 +117,13 @@ async def update_dcotw(run_mode,client):
     
     dict_update(ctg_totals,sheet,'Category Totals',True)
     print("Uploaded category totals to Google Sheets, sleeping 5 seconds...")
-    time.sleep(5)
+    asyncio.sleep(5)
     
     for category in results:
         for cat_name in category.keys():
             dict_update(category[cat_name],sheet,str(cat_name),False)
             print("Uploaded category {} to Google Sheets, sleeping 5 seconds...".format(cat_name))
-            time.sleep(5)
+            asyncio.sleep(5)
     
     print('DCotW updates completed.')
     await log_channel.send("{} DCotW updates completed at {}!".format(run_mode, datetime.now(pytz.timezone('US/Central')).strftime('%H:%M:%S %Z on %b %d, %Y')))
